@@ -1,0 +1,7 @@
+# Documenti del titolare: non si riformattano in automatico.
+docs/
+*.md
+package-lock.json
+.next/
+playwright-report/
+test-results/
