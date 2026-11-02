@@ -44,3 +44,9 @@ Ogni migrazione si applica prima al database di prova; prima di toccare la produ
 ## Flusso di lavoro
 Un lavoro = un ramo = una anteprima su Vercel. Il ramo `main` va in ambiente di prova; la produzione si aggiorna solo su richiesta.
 Commit piccoli, messaggi chiari in italiano. Prima di chiudere un lavoro: typecheck, lint, test, e una breve nota su come provarlo.
+
+## Autonomia e autorizzazioni (regola del titolare, 2 novembre 2026)
+- Fai da solo tutto ciò che puoi fare: installare strumenti sul computer, creare e modificare file, eseguire test, preparare rami e commit, leggere dati dai servizi collegati. Prima di chiedere un'azione al titolare, chiediti sempre se puoi farla tu.
+- Chiedi invece l'autorizzazione per: unioni in `main`; qualsiasi modifica alla produzione; impostazioni di sicurezza e di account su Supabase, Vercel e GitHub; spese e cambi di piano; cancellazioni di dati; decisioni di architettura o di strategia.
+- Chiavi e segreti: non chiederli mai in chat e non copiarli tu dai pannelli dei servizi. Il titolare li inserisce nei file locali e nelle impostazioni di Vercel.
+- Per il lavoro manuale o ripetitivo vai avanti senza chiedere e riferisci dopo, in italiano semplice: cosa hai fatto, come si prova, cosa manca.
