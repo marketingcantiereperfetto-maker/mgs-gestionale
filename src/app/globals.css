@@ -1,0 +1,19 @@
+@import "tailwindcss";
+
+/* Stile semplice ispirato alle interfacce Apple (cap. 21): sfondo grigio chiaro,
+   schede bianche arrotondate, un solo colore per le azioni. */
+@theme {
+  --color-page: #f5f5f7;
+  --color-card: #ffffff;
+  --color-ink: #1d1d1f;
+  --color-ink-muted: #6e6e73;
+  --color-line: #d2d2d7;
+  --color-action: #0071e3;
+  --font-sans:
+    -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
+}
+
+body {
+  background-color: var(--color-page);
+  color: var(--color-ink);
+}

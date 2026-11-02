@@ -36,3 +36,17 @@ mgs-gestionale/
   scripts/               importazioni da Excel
   .github/workflows/     controlli automatici
 ```
+
+## Come avviarlo sul computer
+
+Serve Node 26 (vedi `.nvmrc`). Dalla cartella del progetto:
+
+```bash
+npm install
+npm run dev
+```
+
+Poi apri http://localhost:3000.
+
+Controlli prima di ogni commit: `npm run check` (tipi, stile, formattazione, test).
+Test nel browser: `npm run test:e2e` (la prima volta: `npx playwright install chromium`).
