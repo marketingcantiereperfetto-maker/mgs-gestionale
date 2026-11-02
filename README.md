@@ -31,7 +31,7 @@ mgs-gestionale/
       quotes/ orders/ payments/ management/
     server/              accessi, permessi, comandi al database
     lib/                 utilità comuni (importi, date, formati italiani)
-  db/migrations/         modifiche al database, numerate
+  supabase/migrations/   modifiche al database (CLI Supabase, solo in avanti)
   tests/                 unit/  golden/ (casi reali)  e2e/
   scripts/               importazioni da Excel
   .github/workflows/     controlli automatici

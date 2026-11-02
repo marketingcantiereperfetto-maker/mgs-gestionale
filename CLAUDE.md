@@ -38,7 +38,8 @@ preventivo=quote, ordine=order, cliente=customer, materiale=material, lavorazion
 Wizard=wizard, categoria=category, società=company, brand=brand, rata=installment,
 condizione di pagamento=payment_terms, soglia di sicurezza=safety_threshold.
 Una funzione fa una cosa. Commenti solo dove la regola di business non è ovvia, con riferimento al capitolo del documento.
-Le modifiche al database sono sempre migrazioni numerate e reversibili in `db/migrations`.
+Le modifiche al database sono sempre migrazioni Supabase in `supabase/migrations`, create con la CLI ufficiale, solo in avanti.
+Ogni migrazione si applica prima al database di prova; prima di toccare la produzione, copia di sicurezza.
 
 ## Flusso di lavoro
 Un lavoro = un ramo = una anteprima su Vercel. Il ramo `main` va in ambiente di prova; la produzione si aggiorna solo su richiesta.

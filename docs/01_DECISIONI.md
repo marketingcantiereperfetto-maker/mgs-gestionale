@@ -22,9 +22,22 @@ Aggiornare a ogni traguardo. Una decisione cambiata non si cancella: si aggiunge
 - Sicurezza semplice: permessi sul server, RLS di base, registro delle modifiche. Nessun gateway personalizzato.
 - Importi con NUMERIC e libreria decimale. Motore dei prezzi come modulo puro con test sui casi reali.
 
+## Decise il 2 novembre 2026 (risposte del titolare all'avvio)
+- **Node 26** (LTS attiva dal 28 ottobre 2026, predefinita su Vercel). Sostituisce la 24 indicata in `.nvmrc` all'avvio.
+- **Ruoli:** 5 modelli forniti dal software (titolare, consulente, responsabile commerciale, amministrazione cataloghi, amministrazione economica). Facoltà personalizzate sul singolo utente in una fase successiva. Ogni utente è collegato a una o più società già dal primo rilascio dell'accesso.
+- **Primo accesso:** solo su invito, nessuna registrazione libera. Il primo titolare si crea con un comando, dopo conferma, e imposta la password dal link ricevuto per email.
+- **Costi dei servizi:** piani gratuiti di Vercel e Supabase per la prova. **Prima del pilota si passa ai piani a pagamento** (il piano Hobby di Vercel non ammette uso commerciale; Supabase gratuito sospende i progetti inattivi).
+- **Ambienti:** un solo progetto Supabase di prova adesso (usato da `main` e dalle anteprime, solo dati inventati); un progetto di produzione separato prima del pilota.
+- **Scadenza del preventivo:** impostazione modificabile dall'amministrazione, nessun valore nel codice (supera i «7 giorni» del §12.1).
+- **Soglia di sicurezza:** tutti gli articoli hanno una composizione (un articolo semplice è un materiale). La soglia di riga è sempre la somma delle soglie delle voci. Un kit con prezzo promozionale non può scendere sotto la somma delle soglie dei componenti. Il §11.3 del documento sarà corretto dal titolare.
+- **Società:** più conti bancari per società, uno predefinito che compare sul PDF. Per creare una società basta la ragione sociale; per emettere preventivi servono partita IVA, codice fiscale, sede legale, email e un IBAN se si usa il bonifico. Il logo è del brand; la società può avere un logo di riserva.
+- **Migrazioni:** strada standard di Supabase (cartella `supabase/migrations` e CLI ufficiale), solo in avanti. Ogni migrazione va prima sul database di prova; copia di sicurezza prima di toccare la produzione. Sostituisce la regola «migrazioni reversibili in `db/migrations`».
+- **Clienti società del gruppo:** l'anagrafica clienti avrà un campo che indica se il cliente è una società del gruppo e quale (serve a escludere le vendite interne dal conto di Gruppo, §25.4).
+- **Materiali di riferimento:** il titolare li mette in `docs/riferimenti` prima della Fase 2, con i nomi dei clienti anonimizzati.
+
 ## Aperte (da decidere prima della funzione relativa)
-- Valori di aliquote, coefficiente di soglia e quota di spedizione interna.
-- Finestra storica e soglia minima di storico per le previsioni.
-- «Duplica per» del gestionale attuale: significato. Taglie come righe o note nella prima fase.
+- Arrotondamenti: prima del motore dei prezzi.
+- Numerazione preventivi e ordini, «Duplica per», taglie come righe o note: prima dei Wizard.
 - Articolo inserito al volo dal preventivo: subito utilizzabile o in bozza.
-- Numerazione preventivi e ordini; stati dell'ordine.
+- Stati dell'ordine; valori di aliquote, coefficiente di soglia e quota di spedizione interna: più avanti.
+- Finestra storica e soglia minima di storico per le previsioni.
