@@ -1,0 +1,51 @@
+import { redirect } from "next/navigation";
+import { AuthCard } from "@/components/auth-card";
+import { TopBar } from "@/components/top-bar";
+import { loginPath, setPasswordPath } from "@/lib/auth/routes";
+import { visibleNavigation } from "@/lib/navigation";
+import { signOut } from "@/server/auth/actions";
+import { getSession } from "@/server/auth/current-user";
+import { can, roleLabels } from "@/server/auth/permissions";
+
+function initials(name: string): string {
+  const words = name.split(/[\s@._-]+/).filter(Boolean);
+  return words
+    .slice(0, 2)
+    .map((word) => word[0]!.toUpperCase())
+    .join("");
+}
+
+export default async function AppLayout({ children }: { children: React.ReactNode }) {
+  const session = await getSession();
+  if (session.status === "anonymous") redirect(loginPath);
+  if (session.status === "password-required") redirect(setPasswordPath);
+
+  if (session.status === "without-profile") {
+    return (
+      <AuthCard title="Account non abilitato">
+        <p className="rounded-lg bg-warning-bg px-3 py-2 text-warning" role="alert">
+          L&apos;account {session.email} non ha un profilo attivo. Chiedi al titolare di abilitarlo.
+        </p>
+        <form action={signOut} className="mt-4">
+          <button type="submit" className="text-sm font-medium text-action">
+            Esci
+          </button>
+        </form>
+      </AuthCard>
+    );
+  }
+
+  const { user } = session;
+  const name = user.fullName ?? user.email;
+  const sections = visibleNavigation((action) => can(user, action));
+
+  return (
+    <>
+      <TopBar
+        sections={sections}
+        user={{ name, initials: initials(name), roleLabel: roleLabels[user.role] }}
+      />
+      <div className="pt-[46px]">{children}</div>
+    </>
+  );
+}
