@@ -16,6 +16,7 @@ export type BankAccount = {
 export type Company = CompanyData & {
   id: string;
   isActive: boolean;
+  fallbackLogoPath: string | null;
   bankAccounts: BankAccount[];
 };
 
@@ -42,6 +43,7 @@ function toCompany(row: CompanyRow & { company_bank_accounts: BankAccountRow[] }
     addressProvince: row.address_province,
     addressCountry: row.address_country,
     isActive: row.is_active,
+    fallbackLogoPath: row.fallback_logo_path,
     bankAccounts: row.company_bank_accounts
       .map(toBankAccount)
       .sort((a, b) => Number(b.isDefault) - Number(a.isDefault)),
