@@ -18,7 +18,7 @@ const sessionErrorCodes = new Set([
 export function passwordErrorMessage(error: PasswordError): string {
   if (error.code === "same_password") return "Scegli una password diversa da quella attuale.";
   if (error.code === "weak_password") {
-    return `Password troppo debole o troppo corta: usa almeno ${minPasswordLength} caratteri con lettere, numeri e simboli.`;
+    return `Password troppo debole o troppo corta: usa almeno ${minPasswordLength} caratteri.`;
   }
   if (error.name === "AuthSessionMissingError" || sessionErrorCodes.has(error.code ?? "")) {
     return "La sessione è scaduta. Accedi di nuovo; se non hai ancora una password, chiedi al titolare un nuovo invito.";
