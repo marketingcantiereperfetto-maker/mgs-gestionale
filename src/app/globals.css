@@ -9,7 +9,9 @@
   --color-ink-muted: #6e6e73;
   --color-line: #d2d2d7;
   --color-action: #0071e3;
+  --color-action-pressed: #005bbf;
   --color-secondary: #e8e8ed;
+  --color-secondary-pressed: #cfcfd6;
   --color-bar: rgba(246, 246, 248, 0.94);
   --color-bar-line: #d9d9de;
   --color-hover: #e3e3e8;
@@ -24,10 +26,65 @@
     -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
 
+html {
+  /* Sul touch niente lampeggio grigio del sistema: l'effetto «premuto» è il nostro. */
+  -webkit-tap-highlight-color: transparent;
+}
+
 body {
   background-color: var(--color-page);
   color: var(--color-ink);
   font-size: 14px;
+}
+
+/* Pulsanti (docs/05_STILE_INTERFACCIA.md, «Pulsanti»): un solo punto per tutti.
+   Premuto (mouse, tocco, Invio o Spazio tenuti giù: [data-pressed]) = colore un po' più scuro
+   e scala al 97%, transizione di 80 ms; al rilascio torna normale. */
+.button {
+  transition:
+    background-color 80ms ease-out,
+    color 80ms ease-out,
+    transform 80ms ease-out;
+  touch-action: manipulation;
+}
+
+.button:focus-visible {
+  outline: 2px solid var(--color-action);
+  outline-offset: 2px;
+}
+
+.button:not(:disabled):is(:active, [data-pressed]) {
+  transform: scale(0.97);
+}
+
+.button-primary {
+  background-color: var(--color-action);
+  color: var(--color-card);
+}
+
+.button-primary:not(:disabled):is(:active, [data-pressed]) {
+  background-color: var(--color-action-pressed);
+}
+
+.button-secondary {
+  background-color: var(--color-secondary);
+  color: var(--color-ink);
+}
+
+.button-secondary:not(:disabled):is(:active, [data-pressed]) {
+  background-color: var(--color-secondary-pressed);
+}
+
+.button-text {
+  color: var(--color-action);
+}
+
+.button-text:disabled {
+  color: var(--color-ink-muted);
+}
+
+.button-text:not(:disabled):is(:active, [data-pressed]) {
+  color: var(--color-action-pressed);
 }
 
 /* Chi chiede di ridurre i movimenti non vede transizioni né animazioni. */
@@ -39,6 +96,11 @@ body {
     animation-iteration-count: 1 !important;
     transition-duration: 0.01ms !important;
     scroll-behavior: auto !important;
+  }
+
+  /* Niente scala: da premuto cambia solo il colore. */
+  .button:not(:disabled):is(:active, [data-pressed]) {
+    transform: none;
   }
 }
 

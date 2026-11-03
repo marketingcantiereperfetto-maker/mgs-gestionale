@@ -4,8 +4,12 @@ import Link from "next/link";
 
 export const focusRing = "outline-none focus-visible:ring-2 focus-visible:ring-action";
 
-export const primaryButton = `inline-flex items-center rounded-full bg-action px-4 py-1.5 font-medium text-white disabled:opacity-60 ${focusRing}`;
-export const secondaryButton = `inline-flex items-center rounded-full bg-secondary px-4 py-1.5 font-medium text-ink disabled:opacity-60 ${focusRing}`;
+// Colori, effetto «premuto» e bordo di selezione dei pulsanti stanno in globals.css.
+export const primaryButton =
+  "button button-primary inline-flex items-center rounded-full px-4 py-1.5 font-medium disabled:opacity-60";
+export const secondaryButton =
+  "button button-secondary inline-flex items-center rounded-full px-4 py-1.5 font-medium disabled:opacity-60";
+export const textButton = "button button-text rounded text-[13px] font-medium";
 export const fieldClass = `mt-1 w-full rounded-[10px] border border-line bg-card px-3 py-1.5 text-ink ${focusRing}`;
 
 export function PageHeader({ title, subtitle }: { title: string; subtitle?: string }) {

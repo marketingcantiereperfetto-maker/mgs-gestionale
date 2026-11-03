@@ -23,4 +23,4 @@ export const inputClass =
   "mt-1 w-full rounded-lg border border-line bg-white px-3 py-2 text-ink outline-none focus:border-action focus:ring-2 focus:ring-action/20";
 
 export const buttonClass =
-  "w-full rounded-lg bg-action px-4 py-2 font-medium text-white disabled:opacity-60";
+  "button button-primary w-full rounded-full px-4 py-2 font-medium disabled:opacity-60";

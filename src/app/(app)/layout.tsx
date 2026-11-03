@@ -1,5 +1,6 @@
 import { redirect } from "next/navigation";
 import { AuthCard } from "@/components/auth-card";
+import { textButton } from "@/components/ui";
 import { TopBar } from "@/components/top-bar";
 import { loginPath, setPasswordPath } from "@/lib/auth/routes";
 import { initials } from "@/lib/initials";
@@ -20,7 +21,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
           L&apos;account {session.email} non ha un profilo attivo. Chiedi al titolare di abilitarlo.
         </p>
         <form action={signOut} className="mt-4">
-          <button type="submit" className="text-sm font-medium text-action">
+          <button type="submit" className={textButton}>
             Esci
           </button>
         </form>

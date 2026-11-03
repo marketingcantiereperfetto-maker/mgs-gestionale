@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { AuthCard } from "@/components/auth-card";
+import { textButton } from "@/components/ui";
 import { signOut } from "@/server/auth/actions";
 import { PasswordForm } from "./password-form";
 
@@ -13,7 +14,7 @@ export default function SetPasswordPage() {
       </p>
       <PasswordForm />
       <form action={signOut} className="mt-4">
-        <button type="submit" className="text-sm font-medium text-action">
+        <button type="submit" className={textButton}>
           Esci
         </button>
       </form>

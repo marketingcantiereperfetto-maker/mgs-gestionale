@@ -12,6 +12,14 @@ Semplice, pulita, ispirata alle interfacce Apple. Tutto lo schermo ai dati. Un s
 - Etichette di stato: informativa `#e8f1fd`/`#0058b0`, riuscito `#e6f6ea`/`#1a6b34`, attenzione `#fff4e5`/`#7a4a00`, errore testo `#b3261e`.
 - Campi: bordo 1px `#d2d2d7`, raggio 10px. Contrasto minimo AA.
 
+## Pulsanti
+- Tre tipi, definiti in un solo punto (`src/app/globals.css`, classi `button`, `button-primary`, `button-secondary`, `button-text`): primario blu a pillola, secondario grigio a pillola, pulsante di testo blu.
+- **Effetto «premuto»** immediato, come un tasto vero, con il mouse, al tocco e con Invio o Spazio tenuti giù: colore leggermente più scuro (primario `#005bbf`, testo `#005bbf`; secondario più marcato, `#cfcfd6`) e scala al 97%. Transizione di 80 ms; al rilascio torna normale.
+- Con «riduci i movimenti» niente scala: cambia solo il colore.
+- Sul touch nessun lampeggio grigio del sistema.
+- Contrasto AA anche da premuto. Bordo di selezione da tastiera: linea blu di 2px staccata di 2px dal pulsante.
+- Durante l'invio il pulsante si disabilita e mostra il testo d'attesa («Salvataggio…»); a operazione riuscita compare una conferma breve.
+
 ## Tipografia
 Font di sistema: `-apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Arial`. Titolo pagina 28px peso 600, testo 14px, etichette 13px in grigio.
 

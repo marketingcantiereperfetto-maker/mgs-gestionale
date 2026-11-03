@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { useActionState } from "react";
 import { ActionFeedback, ActionForm, SubmitButton } from "@/components/action-form";
-import { Badge, FieldError, fieldClass, focusRing, primaryButton } from "@/components/ui";
+import { Badge, FieldError, fieldClass, primaryButton, textButton } from "@/components/ui";
 import { formatIban } from "@/domain/company/identifiers";
 import { companyPath } from "@/lib/company-paths";
 import {
@@ -15,7 +15,7 @@ import {
 } from "@/server/companies/actions";
 import type { BankAccount } from "@/server/companies/queries";
 
-const linkButton = `rounded text-[13px] font-medium text-action disabled:text-ink-muted ${focusRing}`;
+const linkButton = textButton;
 
 type RowActions = {
   makeDefault: (formData: FormData) => void;

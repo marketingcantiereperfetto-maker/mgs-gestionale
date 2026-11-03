@@ -32,6 +32,10 @@ const pairs: [string, string][] = [
   ["ink-muted", "page"],
   ["ink-muted", "card"],
   ["card", "action"],
+  // Pulsanti da premuti.
+  ["card", "action-pressed"],
+  ["ink", "secondary-pressed"],
+  ["action-pressed", "card"],
   ["action", "card"],
   ["info", "info-bg"],
   ["success", "success-bg"],
