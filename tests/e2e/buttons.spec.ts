@@ -1,6 +1,17 @@
-import { expect, test, type Locator } from "@playwright/test";
+import { expect, test, type Locator, type Page } from "@playwright/test";
 
-// Effetto «premuto» dei pulsanti, sul pulsante «Accedi» (pagina pubblica, nessun dato).
+// Effetto «premuto» dei pulsanti, sul pulsante «Attiva l'account»: pagina pubblica che
+// compare anche senza database (come su GitHub). L'invio del modulo è bloccato: si prova solo
+// l'aspetto del pulsante, senza usare il codice finto.
+const page_ = "/auth/conferma?token_hash=finto&type=invite";
+
+async function open(page: Page): Promise<Locator> {
+  await page.goto(page_);
+  await page.evaluate(() =>
+    window.addEventListener("submit", (event) => event.preventDefault(), { capture: true }),
+  );
+  return page.getByRole("button", { name: "Attiva l'account" });
+}
 
 async function look(button: Locator) {
   return button.evaluate((element) => {
@@ -19,8 +30,7 @@ async function pressAndHold(button: Locator) {
 test("premuto con il mouse: più scuro e più piccolo; al rilascio torna normale", async ({
   page,
 }) => {
-  await page.goto("/accedi");
-  const button = page.getByRole("button", { name: "Accedi" });
+  const button = await open(page);
   const atRest = await look(button);
 
   await pressAndHold(button);
@@ -35,8 +45,7 @@ test("premuto con il mouse: più scuro e più piccolo; al rilascio torna normale
 });
 
 test("premuto da tastiera con Spazio tenuto giù", async ({ page }) => {
-  await page.goto("/accedi");
-  const button = page.getByRole("button", { name: "Accedi" });
+  const button = await open(page);
   const atRest = await look(button);
   await button.focus();
   await page.keyboard.down(" ");
@@ -47,8 +56,7 @@ test("premuto da tastiera con Spazio tenuto giù", async ({ page }) => {
 
 test("con «riduci i movimenti» da premuto cambia solo il colore", async ({ page }) => {
   await page.emulateMedia({ reducedMotion: "reduce" });
-  await page.goto("/accedi");
-  const button = page.getByRole("button", { name: "Accedi" });
+  const button = await open(page);
   const atRest = await look(button);
 
   await pressAndHold(button);
@@ -58,10 +66,14 @@ test("con «riduci i movimenti» da premuto cambia solo il colore", async ({ pag
 });
 
 test("il bordo di selezione da tastiera è visibile", async ({ page }) => {
-  await page.goto("/accedi");
-  const button = page.getByRole("button", { name: "Accedi" });
-  await page.getByLabel("Password").focus();
-  await page.keyboard.press("Tab");
+  const button = await open(page);
+  for (
+    let step = 0;
+    step < 10 && !(await button.evaluate((el) => el === document.activeElement));
+    step++
+  ) {
+    await page.keyboard.press("Tab");
+  }
   await expect(button).toBeFocused();
   const outline = await button.evaluate((element) => {
     const style = getComputedStyle(element);
