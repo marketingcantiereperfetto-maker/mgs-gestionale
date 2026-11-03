@@ -1,6 +1,6 @@
 import { expect, test, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
-import { deleteTestCompanies, testPrefix } from "./support/test-data";
+import { deleteTestCompanies, runPrefix } from "./support/test-data";
 import { admin } from "./support/temporary-users";
 import {
   canUseTemporaryUsers,
@@ -16,22 +16,24 @@ import {
 test.skip(!canUseTemporaryUsers, "servono le variabili del database di prova in .env.local");
 test.describe.configure({ mode: "serial" });
 
+const mine = runPrefix(randomUUID().slice(0, 8));
+
 let owner: TemporaryUser;
 let consultant: TemporaryUser;
-const companyName = `${testPrefix} ${randomUUID().slice(0, 8)} Srl`;
+const companyName = `${mine} ${randomUUID().slice(0, 8)} Srl`;
 let companyUrl = "";
 
 test.beforeAll(async () => {
   test.setTimeout(120_000);
   await deleteLeftoverTemporaryUsers();
-  await deleteTestCompanies();
+  await deleteTestCompanies({ leftoversOlderThanHour: true });
   owner = await createTemporaryUser("owner");
   consultant = await createTemporaryUser("sales_consultant");
 });
 
 test.afterAll(async () => {
   test.setTimeout(120_000);
-  await deleteTestCompanies();
+  await deleteTestCompanies({ prefix: mine });
   await deleteTemporaryUser(owner);
   await deleteTemporaryUser(consultant);
 });
@@ -163,7 +165,7 @@ test("il consulente non apre società e brand, neanche dall'indirizzo", async ({
 });
 
 test("doppio clic su «Crea società»: si crea una sola società", async ({ page }) => {
-  const name = `${testPrefix} doppio clic ${randomUUID().slice(0, 8)} Srl`;
+  const name = `${mine} doppio clic ${randomUUID().slice(0, 8)} Srl`;
   await signIn(page, owner);
   await page.goto("/impostazioni/societa-e-brand/societa/nuova");
   await page.getByLabel("Ragione sociale").fill(name);

@@ -51,13 +51,38 @@ function Field({
   );
 }
 
+// Il paese parte vuoto: «Italia» si sceglie con un clic e si salva con «Salva».
+function CountryField({ initial, invalid }: { initial: string; invalid: boolean }) {
+  const [country, setCountry] = useState(initial);
+  const countryLabel = countryName(country.trim().toUpperCase());
+  return (
+    <div className="flex flex-wrap items-end gap-3">
+      <label className="block text-[13px] text-ink-muted">
+        {labels.addressCountry}
+        <input
+          name="addressCountry"
+          value={country}
+          onChange={(event) => setCountry(event.target.value)}
+          maxLength={2}
+          aria-invalid={invalid}
+          aria-describedby="addressCountry-error addressCountry-name"
+          className={`${fieldClass.replace("w-full", "w-24")} text-[14px] uppercase`}
+        />
+      </label>
+      <button type="button" onClick={() => setCountry("IT")} className={secondaryButton}>
+        Italia
+      </button>
+      <span id="addressCountry-name" className="pb-1.5 text-ink-muted" aria-live="polite">
+        {countryLabel ?? ""}
+      </span>
+    </div>
+  );
+}
+
 export function CompanyForm({ company }: { company: Company }) {
   const [state, formAction] = useActionState(updateCompany, initialState);
-  // Il paese parte vuoto: «Italia» si sceglie con un clic e si salva con «Salva».
-  const [country, setCountry] = useState(company.addressCountry ?? "");
   const errors = state.fieldErrors;
   const value = (name: CompanyField) => state.values?.[name] ?? company[name];
-  const countryLabel = countryName(country.trim().toUpperCase());
 
   return (
     <ActionForm action={formAction} className="space-y-4">
@@ -85,26 +110,12 @@ export function CompanyForm({ company }: { company: Company }) {
             error={errors.addressProvince}
           />
         </div>
-        <div className="flex flex-wrap items-end gap-3">
-          <label className="block text-[13px] text-ink-muted">
-            {labels.addressCountry}
-            <input
-              name="addressCountry"
-              value={country}
-              onChange={(event) => setCountry(event.target.value)}
-              maxLength={2}
-              aria-invalid={Boolean(errors.addressCountry)}
-              aria-describedby="addressCountry-error addressCountry-name"
-              className={`${fieldClass.replace("w-full", "w-24")} text-[14px] uppercase`}
-            />
-          </label>
-          <button type="button" onClick={() => setCountry("IT")} className={secondaryButton}>
-            Italia
-          </button>
-          <span id="addressCountry-name" className="pb-1.5 text-ink-muted" aria-live="polite">
-            {countryLabel ?? ""}
-          </span>
-        </div>
+        {/* Ricreato a ogni salvataggio riuscito: mostra il paese come è stato salvato. */}
+        <CountryField
+          key={`${company.addressCountry ?? ""}-${state.done ?? 0}`}
+          initial={value("addressCountry") ?? ""}
+          invalid={Boolean(errors.addressCountry)}
+        />
         <FieldError id="addressCountry-error" message={errors.addressCountry} />
       </fieldset>
 

@@ -4,6 +4,29 @@ import { admin } from "./temporary-users";
 // tocca solo quelli (e solo sul progetto di prova, controllato da admin()).
 export const testPrefix = "Prova e2e";
 
+// Ogni file di prova usa un prefisso suo e pulisce solo i suoi dati: le prove girano in
+// parallelo. I resti di prove interrotte si cancellano solo dopo un'ora.
+export function runPrefix(run: string): string {
+  return `${testPrefix} ${run}`;
+}
+
+export type Cleanup = { prefix: string } | { leftoversOlderThanHour: true };
+
+type Filterable<Query> = {
+  like(column: string, pattern: string): Query;
+  lt(column: string, value: string): Query;
+};
+
+function scope<Query extends Filterable<Query>>(
+  query: Query,
+  column: string,
+  cleanup: Cleanup,
+): Query {
+  if ("prefix" in cleanup) return query.like(column, `${cleanup.prefix}%`);
+  const hourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
+  return query.like(column, `${testPrefix}%`).lt("created_at", hourAgo);
+}
+
 async function deleteLogos(folder: "brands" | "companies", ids: string[]): Promise<void> {
   const storage = admin().storage.from("logos");
   for (const id of ids) {
@@ -13,9 +36,9 @@ async function deleteLogos(folder: "brands" | "companies", ids: string[]): Promi
   }
 }
 
-export async function deleteTestBrands(): Promise<void> {
+export async function deleteTestBrands(cleanup: Cleanup): Promise<void> {
   const supabase = admin();
-  const { data, error } = await supabase.from("brands").select("id").like("name", `${testPrefix}%`);
+  const { data, error } = await scope(supabase.from("brands").select("id"), "name", cleanup);
   if (error) throw new Error(`Brand di prova non letti: ${error.message}`);
   const ids = data.map((brand) => brand.id);
   if (ids.length === 0) return;
@@ -25,12 +48,13 @@ export async function deleteTestBrands(): Promise<void> {
   if (brands.error) throw new Error(`Brand di prova non cancellati: ${brands.error.message}`);
 }
 
-export async function deleteTestCompanies(): Promise<void> {
+export async function deleteTestCompanies(cleanup: Cleanup): Promise<void> {
   const supabase = admin();
-  const { data, error } = await supabase
-    .from("companies")
-    .select("id")
-    .like("legal_name", `${testPrefix}%`);
+  const { data, error } = await scope(
+    supabase.from("companies").select("id"),
+    "legal_name",
+    cleanup,
+  );
   if (error) throw new Error(`Società di prova non lette: ${error.message}`);
   const ids = data.map((company) => company.id);
   if (ids.length === 0) return;

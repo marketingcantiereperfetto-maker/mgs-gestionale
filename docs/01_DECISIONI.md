@@ -83,6 +83,7 @@ Aggiornare a ogni traguardo. Una decisione cambiata non si cancella: si aggiunge
 - **Collegamento brand ↔ società:** si gestisce dalla scheda del brand; togliere un collegamento lo fa sparire (resta nel registro). La scheda avvisa, senza bloccare, se il brand resta senza società.
 - **Loghi:** il nome del file sull'archivio è sempre generato dal server (codice casuale + estensione del tipo riconosciuto), mai preso da quello dell'utente. Un logo sostituito resta nell'archivio privato; il brand punta al nuovo. Il logo di riserva della società usa lo stesso meccanismo.
 - **Limite di invio dei loghi:** Next.js permette di alzare il limite solo per tutte le azioni insieme; per questo il caricamento passa da un indirizzo dedicato (`/api/loghi`) con il suo limite (1 MB di file), mentre le altre azioni restano a 1 MB. L'indirizzo accetta solo richieste dal gestionale stesso.
+- **Stato dopo il salvataggio (dopo la prova della richiesta n. 9):** la schermata mostra sempre i dati salvati, senza ricaricare. Il difetto delle spunte dei collegamenti (salvate ma mostrate vuote) e quello del paese (mostrato come scritto, non come salvato) sono corretti; regola aggiunta a `CLAUDE.md`.
 - **Indirizzi firmati dei loghi:** scadono in 5 minuti e non finiscono mai nel registro, nei messaggi di errore o nei log.
 
 ## Aperte (da decidere prima della funzione relativa)

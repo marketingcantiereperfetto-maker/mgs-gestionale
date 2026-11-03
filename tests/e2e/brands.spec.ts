@@ -1,7 +1,7 @@
 import { createClient } from "@supabase/supabase-js";
 import { expect, test, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
-import { deleteTestBrands, deleteTestCompanies, testPrefix } from "./support/test-data";
+import { deleteTestBrands, deleteTestCompanies, runPrefix } from "./support/test-data";
 import {
   admin,
   canUseTemporaryUsers,
@@ -17,9 +17,11 @@ import {
 test.skip(!canUseTemporaryUsers, "servono le variabili del database di prova in .env.local");
 test.describe.configure({ mode: "serial" });
 
+const mine = runPrefix(randomUUID().slice(0, 8));
+
 const run = randomUUID().slice(0, 8);
-const brandName = `${testPrefix} Brand ${run}`;
-const companyName = `${testPrefix} Società brand ${run} Srl`;
+const brandName = `${mine} Brand ${run}`;
+const companyName = `${mine} Società brand ${run} Srl`;
 // Immagine PNG vera di 1×1 pixel.
 const png = Buffer.from(
   "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==",
@@ -33,8 +35,8 @@ let brandUrl = "";
 test.beforeAll(async () => {
   test.setTimeout(120_000);
   await deleteLeftoverTemporaryUsers();
-  await deleteTestBrands();
-  await deleteTestCompanies();
+  await deleteTestBrands({ leftoversOlderThanHour: true });
+  await deleteTestCompanies({ leftoversOlderThanHour: true });
   owner = await createTemporaryUser("owner");
   consultant = await createTemporaryUser("sales_consultant");
   const { error } = await admin().from("companies").insert({ legal_name: companyName });
@@ -43,8 +45,8 @@ test.beforeAll(async () => {
 
 test.afterAll(async () => {
   test.setTimeout(120_000);
-  await deleteTestBrands();
-  await deleteTestCompanies();
+  await deleteTestBrands({ prefix: mine });
+  await deleteTestCompanies({ prefix: mine });
   await deleteTemporaryUser(owner);
   await deleteTemporaryUser(consultant);
 });
@@ -204,8 +206,8 @@ test("il brand disattivato sparisce dall'elenco e si riattiva", async ({ page })
 });
 
 test("due società non possono avere la stessa partita IVA", async ({ page }) => {
-  const first = `${testPrefix} IVA uno ${run} Srl`;
-  const second = `${testPrefix} IVA due ${run} Srl`;
+  const first = `${mine} IVA uno ${run} Srl`;
+  const second = `${mine} IVA due ${run} Srl`;
   await admin().from("companies").insert({ legal_name: first, vat_number: "01234567897" });
   await admin().from("companies").insert({ legal_name: second });
   const { data } = await admin().from("companies").select("id").eq("legal_name", second).single();

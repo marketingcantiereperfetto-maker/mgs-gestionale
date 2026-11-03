@@ -38,6 +38,7 @@ preventivo=quote, ordine=order, cliente=customer, materiale=material, lavorazion
 Wizard=wizard, categoria=category, società=company, brand=brand, rata=installment,
 condizione di pagamento=payment_terms, soglia di sicurezza=safety_threshold.
 **Ogni creazione è protetta dal doppio invio**: nell'interfaccia con `ActionForm` e `SubmitButton` (`src/components/action-form.tsx`: pulsante disabilitato con testo d'attesa, secondo invio rifiutato, conferma breve), nel database con una chiave di creazione unica (`creation_key`) e, dove ha senso, un vincolo di unicità sui dati (per esempio società + IBAN).
+**Dopo un salvataggio i campi mostrano sempre i dati salvati** (normalizzati come nel database), senza ricaricare la pagina: i moduli con azione riportano i campi ai valori di partenza, quindi i valori iniziali vengono dai dati aggiornati del server, e i campi con stato proprio (caselle, campi con pulsanti di aiuto) si ricreano con `key` legata ai dati salvati. Ogni modulo nuovo ha un test nel browser: salva, controlla senza ricaricare, ricarica, ricontrolla.
 Una funzione fa una cosa. Commenti solo dove la regola di business non è ovvia, con riferimento al capitolo del documento.
 Le modifiche al database sono sempre migrazioni Supabase in `supabase/migrations`, create con la CLI ufficiale, solo in avanti.
 Ogni migrazione si applica prima al database di prova; prima di toccare la produzione, copia di sicurezza.

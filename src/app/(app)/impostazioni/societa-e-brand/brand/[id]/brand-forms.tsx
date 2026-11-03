@@ -48,6 +48,49 @@ export function BrandNameForm({ id, name }: { id: string; name: string }) {
 
 type CompanyOption = { id: string; name: string; isActive: boolean };
 
+// Caselle delle società. Sono non controllate e ricreate (key) a ogni cambio dei collegamenti
+// salvati: dopo il salvataggio mostrano sempre lo stato vero, anche quando il modulo con
+// azione riporta i campi ai valori di partenza.
+function CompanyCheckboxes({
+  companies,
+  linkedIds,
+}: {
+  companies: CompanyOption[];
+  linkedIds: string[];
+}) {
+  const [checkedCount, setCheckedCount] = useState(linkedIds.length);
+  return (
+    <>
+      <fieldset
+        className="space-y-2"
+        onChange={(event) => {
+          const fieldset = event.currentTarget;
+          setCheckedCount(fieldset.querySelectorAll("input:checked").length);
+        }}
+      >
+        <legend className="sr-only">Società che usano questo brand</legend>
+        {companies.map((company) => (
+          <label key={company.id} className="flex items-center gap-2">
+            <input
+              type="checkbox"
+              name="companyIds"
+              value={company.id}
+              defaultChecked={linkedIds.includes(company.id)}
+              className="size-4 accent-action"
+            />
+            {company.name}
+            {!company.isActive ? <Badge tone="warning">Disattivata</Badge> : null}
+          </label>
+        ))}
+      </fieldset>
+      {/* Avviso, non blocco: un brand può restare senza società. */}
+      {checkedCount === 0 && linkedIds.length > 0 ? (
+        <Notice tone="info">Salvando, il brand resterà senza società.</Notice>
+      ) : null}
+    </>
+  );
+}
+
 export function BrandCompaniesForm({
   brandId,
   companies,
@@ -60,45 +103,19 @@ export function BrandCompaniesForm({
   const [state, formAction] = useActionState<BrandActionState, FormData>(setBrandCompanies, {
     error: null,
   });
-  const [checked, setChecked] = useState(() => new Set(linkedIds));
 
   if (companies.length === 0) {
     return <p>Nessuna società attiva da collegare. Aggiungi prima una società.</p>;
   }
 
-  function toggle(id: string, on: boolean) {
-    setChecked((current) => {
-      const next = new Set(current);
-      if (on) next.add(id);
-      else next.delete(id);
-      return next;
-    });
-  }
-
   return (
     <ActionForm action={formAction} className="space-y-3">
       <input type="hidden" name="brandId" value={brandId} />
-      <fieldset className="space-y-2">
-        <legend className="sr-only">Società che usano questo brand</legend>
-        {companies.map((company) => (
-          <label key={company.id} className="flex items-center gap-2">
-            <input
-              type="checkbox"
-              name="companyIds"
-              value={company.id}
-              checked={checked.has(company.id)}
-              onChange={(event) => toggle(company.id, event.target.checked)}
-              className="size-4 accent-action"
-            />
-            {company.name}
-            {!company.isActive ? <Badge tone="warning">Disattivata</Badge> : null}
-          </label>
-        ))}
-      </fieldset>
-      {/* Avviso, non blocco: un brand può restare senza società. */}
-      {checked.size === 0 && linkedIds.length > 0 ? (
-        <Notice tone="info">Salvando, il brand resterà senza società.</Notice>
-      ) : null}
+      <CompanyCheckboxes
+        key={[...linkedIds].sort().join(",")}
+        companies={companies}
+        linkedIds={linkedIds}
+      />
       <SubmitButton pendingLabel="Salvataggio…" className={primaryButton}>
         Salva collegamenti
       </SubmitButton>
