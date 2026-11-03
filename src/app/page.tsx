@@ -1,5 +1,5 @@
 import { redirect } from "next/navigation";
-import { loginPath } from "@/lib/auth/routes";
+import { loginPath, setPasswordPath } from "@/lib/auth/routes";
 import { signOut } from "@/server/auth/actions";
 import { getSession } from "@/server/auth/current-user";
 import { roleLabels } from "@/server/auth/permissions";
@@ -19,6 +19,7 @@ function companiesLabel(count: number): string {
 export default async function HomePage() {
   const session = await getSession();
   if (session.status === "anonymous") redirect(loginPath);
+  if (session.status === "password-required") redirect(setPasswordPath);
   const databaseStatus = await getDatabaseStatus();
 
   return (

@@ -73,6 +73,18 @@ if (inviteError || !invite.user) {
   fail(`invito non creato (${inviteError?.code ?? inviteError?.message ?? "nessun utente"}).`);
 }
 
+// L'invito non deve assegnare password: la sceglie solo l'utente da /imposta-password.
+const { data: hasPassword, error: passwordCheckError } = await supabase.rpc("user_has_password", {
+  target_user_id: invite.user.id,
+});
+if (passwordCheckError || hasPassword !== false) {
+  fail(
+    `l'utente invitato risulta con una password o non è verificabile ` +
+      `(${passwordCheckError?.message ?? "password presente"}). ` +
+      `Utente ${invite.user.id}: segnalalo prima di riprovare.`,
+  );
+}
+
 const { error: profileError } = await supabase.from("profiles").insert({
   user_id: invite.user.id,
   role: "owner",

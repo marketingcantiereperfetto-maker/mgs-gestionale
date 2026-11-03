@@ -100,6 +100,7 @@ export type Database = {
           created_at: string;
           full_name: string | null;
           is_active: boolean;
+          password_set_at: string | null;
           role: Database["public"]["Enums"]["user_role"];
           updated_at: string;
           user_id: string;
@@ -108,6 +109,7 @@ export type Database = {
           created_at?: string;
           full_name?: string | null;
           is_active?: boolean;
+          password_set_at?: string | null;
           role: Database["public"]["Enums"]["user_role"];
           updated_at?: string;
           user_id: string;
@@ -116,6 +118,7 @@ export type Database = {
           created_at?: string;
           full_name?: string | null;
           is_active?: boolean;
+          password_set_at?: string | null;
           role?: Database["public"]["Enums"]["user_role"];
           updated_at?: string;
           user_id?: string;
@@ -128,6 +131,8 @@ export type Database = {
     };
     Functions: {
       health_check: { Args: never; Returns: Json };
+      mark_password_set: { Args: never; Returns: undefined };
+      user_has_password: { Args: { target_user_id: string }; Returns: boolean };
     };
     Enums: {
       user_role: "owner" | "sales_manager" | "sales_consultant" | "catalog_admin" | "finance_admin";

@@ -14,3 +14,13 @@ export function safeNextPath(next: string | null | undefined, fallback = "/"): s
   }
   return next;
 }
+
+export type Access = "anonymous" | "password-required" | "ready";
+
+// Dove mandare l'utente prima di mostrare la pagina richiesta (null = nessun cambio).
+// Chi non ha ancora scelto la password vede solo /imposta-password.
+export function accessRedirect(pathname: string, access: Access): string | null {
+  if (access === "anonymous") return isPublicPath(pathname) ? null : loginPath;
+  if (access === "password-required" && pathname !== setPasswordPath) return setPasswordPath;
+  return null;
+}

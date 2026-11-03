@@ -1,14 +1,15 @@
 import { createServerClient } from "@supabase/ssr";
 import { NextResponse, type NextRequest } from "next/server";
-import { isPublicPath, loginPath } from "@/lib/auth/routes";
+import { accessRedirect, type Access } from "@/lib/auth/routes";
 import type { Database } from "@/lib/supabase/database.types";
 import { readSupabaseEnv } from "@/lib/supabase/env";
 
-// Rinnova la sessione a ogni richiesta e manda alla pagina di accesso chi non è collegato.
+// Rinnova la sessione a ogni richiesta, manda alla pagina di accesso chi non è collegato e su
+// /imposta-password chi non ha ancora scelto la propria password.
 export async function proxy(request: NextRequest) {
   const env = readSupabaseEnv();
   let response = NextResponse.next({ request });
-  let isSignedIn = false;
+  let access: Access = "anonymous";
 
   if (env) {
     const supabase = createServerClient<Database>(env.url, env.publishableKey, {
@@ -26,12 +27,21 @@ export async function proxy(request: NextRequest) {
       },
     });
     const { data } = await supabase.auth.getClaims();
-    isSignedIn = Boolean(data?.claims?.sub);
+    const userId = data?.claims?.sub;
+    if (userId) {
+      const { data: profile } = await supabase
+        .from("profiles")
+        .select("password_set_at")
+        .eq("user_id", userId)
+        .maybeSingle();
+      access = profile && !profile.password_set_at ? "password-required" : "ready";
+    }
   }
 
-  if (!isSignedIn && !isPublicPath(request.nextUrl.pathname)) {
+  const target = accessRedirect(request.nextUrl.pathname, access);
+  if (target) {
     const url = request.nextUrl.clone();
-    url.pathname = loginPath;
+    url.pathname = target;
     url.search = "";
     return NextResponse.redirect(url);
   }

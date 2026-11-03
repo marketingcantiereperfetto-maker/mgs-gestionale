@@ -41,4 +41,14 @@ describe.skipIf(!env)("database di prova: accesso solo su invito", () => {
       expect(error?.code).toBe("42501");
     }
   });
+
+  it("chi non ha fatto l'accesso non segna la password né interroga gli utenti", async () => {
+    const supabase = anonymousClient();
+    const marked = await supabase.rpc("mark_password_set");
+    expect(marked.error?.code).toBe("42501");
+    const checked = await supabase.rpc("user_has_password", {
+      target_user_id: "00000000-0000-0000-0000-000000000000",
+    });
+    expect(checked.error?.code).toBe("42501");
+  });
 });
