@@ -47,8 +47,10 @@ Aggiornare a ogni traguardo. Una decisione cambiata non si cancella: si aggiunge
 - **Primo titolare senza email:** Supabase non permette di cambiare i modelli delle email senza un SMTP aziendale. Il comando `npm run utenti:crea-titolare` (con `--conferma`) crea l'invito e stampa nel Terminale il link a `/auth/conferma`, valido 1 ora; il link non va mai mostrato in chat.
 - **Conferma dell'invito:** aprire il link non verifica nulla; il codice si usa solo dopo il clic su «Attiva l'account» (protegge dai programmi che aprono i link da soli).
 - **Password scelta solo dall'utente (correzione dopo la prova del primo titolare):** l'invito non assegna nessuna password; il comando lo verifica e si ferma se l'utente invitato ne ha una. Il profilo ha il segno «password scelta» (`password_set_at`): finché è vuoto, chi è collegato vede solo `/imposta-password`. Il segno si scrive solo dopo il salvataggio della password e solo se nel sistema di accesso risulta davvero una password salvata: chiamare la funzione a mano non basta. I profili già esistenti partono senza segno: il titolare sceglie la password ancora una volta.
+- **Messaggi di /imposta-password:** errori distinti in italiano (password uguale a quella attuale, troppo debole o corta, sessione scaduta, errore generico).
 
 ## Aperte (da decidere prima della funzione relativa)
+- Password uguale a quella attuale su /imposta-password: considerarla «scelta» e segnare il profilo, oppure chiederne sempre una diversa (proposta in attesa del titolare).
 - Arrotondamenti: prima del motore dei prezzi.
 - Numerazione preventivi e ordini, «Duplica per», taglie come righe o note: prima dei Wizard.
 - Articolo inserito al volo dal preventivo: subito utilizzabile o in bozza.

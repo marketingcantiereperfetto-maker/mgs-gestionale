@@ -1,7 +1,7 @@
 "use server";
 
 import { redirect } from "next/navigation";
-import { minPasswordLength } from "@/lib/auth/password";
+import { minPasswordLength, passwordErrorMessage } from "@/lib/auth/password";
 import { loginPath, safeNextPath, setPasswordPath } from "@/lib/auth/routes";
 import { readSupabaseEnv } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/server/supabase";
@@ -45,14 +45,7 @@ export async function setPassword(_state: FormState, formData: FormData): Promis
 
   const supabase = await createSupabaseServerClient();
   const { error } = await supabase.auth.updateUser({ password });
-  if (error) {
-    return {
-      error:
-        error.code === "weak_password"
-          ? "Password troppo debole: usa lettere, numeri e simboli."
-          : "Non è stato possibile salvare la password. Riprova.",
-    };
-  }
+  if (error) return { error: passwordErrorMessage(error) };
   // Solo ora il profilo risulta «password scelta» e il gestionale smette di chiederla.
   const { error: markError } = await supabase.rpc("mark_password_set");
   if (markError) return { error: "Password salvata, ma non registrata nel profilo. Riprova." };
