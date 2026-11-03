@@ -1,0 +1,42 @@
+import type { Database } from "@/lib/supabase/database.types";
+
+export type UserRole = Database["public"]["Enums"]["user_role"];
+
+export type Action =
+  "costs.view" | "margins.view" | "audit_log.view" | "users.manage" | "settings.manage";
+
+export type AppUser = {
+  id: string;
+  role: UserRole;
+  companyIds: readonly string[];
+  isActive: boolean;
+};
+
+export type Scope = {
+  companyId?: string;
+};
+
+export const roleLabels: Record<UserRole, string> = {
+  owner: "Titolare",
+  sales_manager: "Responsabile commerciale",
+  sales_consultant: "Consulente",
+  catalog_admin: "Amministrazione cataloghi",
+  finance_admin: "Amministrazione economica",
+};
+
+// Facoltà dei 5 modelli di ruolo (cap. 20.1). Costi e margini solo ai ruoli autorizzati
+// (principio 7): l'amministrazione cataloghi vede i costi perché li inserisce.
+const roleActions: Record<UserRole, readonly Action[]> = {
+  owner: ["costs.view", "margins.view", "audit_log.view", "users.manage", "settings.manage"],
+  finance_admin: ["costs.view", "margins.view", "audit_log.view"],
+  catalog_admin: ["costs.view"],
+  sales_manager: [],
+  sales_consultant: [],
+};
+
+export function can(user: AppUser | null, action: Action, scope: Scope = {}): boolean {
+  if (!user || !user.isActive) return false;
+  if (!roleActions[user.role].includes(action)) return false;
+  if (user.role === "owner" || scope.companyId === undefined) return true;
+  return user.companyIds.includes(scope.companyId);
+}

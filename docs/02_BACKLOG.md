@@ -8,11 +8,11 @@ Ogni lavoro ha un criterio per dire «è fatto». Si lavora dall'alto verso il b
 
 ## Fase 1: fondamenta
 1. **Scheletro online.** Progetto, database, rilascio automatico su Vercel, anteprime per ramo, controlli automatici (typecheck, lint, test). *Fatto quando:* l'indirizzo di prova si apre e un push aggiorna l'anteprima.
-2. **Accesso e ruoli.** Login solo su invito, 5 modelli di ruolo forniti dal software (titolare, consulente, responsabile, amministrazione cataloghi, amministrazione economica), ogni utente collegato a una o più società, controllo centrale dei permessi. Primo titolare creato con un comando dopo conferma. *Fatto quando:* un consulente non vede costi e margini.
+2. *(In revisione, ramo `fase1/giorno-3-accesso-ruoli`.)* **Accesso e ruoli.** Login solo su invito, 5 modelli di ruolo forniti dal software (titolare, consulente, responsabile, amministrazione cataloghi, amministrazione economica), ogni utente collegato a una o più società, controllo centrale dei permessi. Primo titolare creato con un comando dopo conferma. *Fatto quando:* un consulente non vede costi e margini.
 3. **Guscio dell'app.** Menu fisso in alto con tendine, ricerca, utente, stato vuoto informativo. *Fatto quando:* tutte le voci aprono pagine segnaposto.
 4. **Impostazioni: società e brand.** Archivio vuoto all'avvio, percorso guidato di configurazione. Più conti bancari per società con uno predefinito; logo sul brand, logo di riserva sulla società. *Fatto quando:* si crea la prima società con IBAN e un brand associato.
 5. **Clienti.** Anagrafica con campi parziali, indicatore «completa per fatturazione», pulsante AGGIUNGI CLIENTE, controllo duplicati, campo «società del gruppo» (quale). *Fatto quando:* si crea un cliente con solo il nome.
-6. **Registro delle modifiche** su configurazioni e dati economici.
+6. **Registro delle modifiche** su configurazioni e dati economici. *(Avviato con il giorno 3: tabella e trigger su società, profili e collegamenti.)*
 
 ## Fase 1b: archivi
 7. Fornitori, categorie, materiali (a misura e a pezzo), lavorazioni con opzioni e basi di calcolo.

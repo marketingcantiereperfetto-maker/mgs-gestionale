@@ -49,4 +49,8 @@ npm run dev
 Poi apri http://localhost:3000.
 
 Controlli prima di ogni commit: `npm run check` (tipi, stile, formattazione, test).
+I test in `tests/integration` usano il database di prova di `.env.local`; senza quel file vengono saltati.
+
+Database: `npm run db:status` (migrazioni applicate), `npm run db:push` (applica le nuove al database collegato).
+Primo titolare: `npm run utenti:crea-titolare -- --email nome@dominio.it` (prova senza effetti; con `--conferma` invia l'invito).
 Test nel browser: `npm run test:e2e` (la prima volta: `npx playwright install chromium`).
