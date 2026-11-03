@@ -18,7 +18,8 @@
     "test:e2e": "playwright test",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm run test",
     "db:status": "supabase migration list --linked",
-    "db:push": "supabase db push --linked"
+    "db:push": "supabase db push --linked",
+    "utenti:crea-titolare": "node --env-file=.env.local scripts/create-owner.ts"
   },
   "dependencies": {
     "@supabase/ssr": "0.12.7",

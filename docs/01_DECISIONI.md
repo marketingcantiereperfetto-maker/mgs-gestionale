@@ -35,6 +35,18 @@ Aggiornare a ogni traguardo. Una decisione cambiata non si cancella: si aggiunge
 - **Clienti società del gruppo:** l'anagrafica clienti avrà un campo che indica se il cliente è una società del gruppo e quale (serve a escludere le vendite interne dal conto di Gruppo, §25.4).
 - **Materiali di riferimento:** il titolare li mette in `docs/riferimenti` prima della Fase 2, con i nomi dei clienti anonimizzati.
 
+## Decise il 3 novembre 2026 (accesso e ruoli, approvate dal titolare)
+- **Costi:** li vedono titolare, amministrazione economica e amministrazione cataloghi (che li inserisce, §20.1).
+- **Margini:** li vedono titolare e amministrazione economica. Responsabile commerciale e consulente non vedono né costi né margini; un eventuale permesso sul singolo utente (per esempio il margine «con autorizzazione» del §24) arriverà più avanti.
+- **Registro delle modifiche:** lo leggono titolare e amministrazione economica. Le righe non si modificano né si cancellano.
+- **Gestione utenti e impostazioni:** solo il titolare, per ora.
+- **Gestione del catalogo** (materiali, lavorazioni, Wizard): facoltà distinta, dell'amministrazione cataloghi; separata da utenti e impostazioni. Il titolare la ha anche lui, come primo amministratore (§20.2).
+- **Società:** il titolare agisce su tutte le società; gli altri ruoli solo su quelle a cui sono collegati.
+- **Password:** almeno 12 caratteri.
+- **Tecnica:** tabella società minima (solo ragione sociale) creata ora per collegare gli utenti; i dati completi arrivano con le Impostazioni (backlog 4).
+- **Primo titolare senza email:** Supabase non permette di cambiare i modelli delle email senza un SMTP aziendale. Il comando `npm run utenti:crea-titolare` (con `--conferma`) crea l'invito e stampa nel Terminale il link a `/auth/conferma`, valido 1 ora; il link non va mai mostrato in chat.
+- **Conferma dell'invito:** aprire il link non verifica nulla; il codice si usa solo dopo il clic su «Attiva l'account» (protegge dai programmi che aprono i link da soli).
+
 ## Aperte (da decidere prima della funzione relativa)
 - Arrotondamenti: prima del motore dei prezzi.
 - Numerazione preventivi e ordini, «Duplica per», taglie come righe o note: prima dei Wizard.
