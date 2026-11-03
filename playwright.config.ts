@@ -18,7 +18,21 @@ export default defineConfig({
     locale: "it-IT",
     timezoneId: "Europe/Rome",
   },
-  projects: [{ name: "chromium", use: { ...devices["Desktop Chrome"] } }],
+  projects: [
+    {
+      name: "chromium",
+      use: { ...devices["Desktop Chrome"] },
+      testIgnore: /setup-guide\.spec\.ts/,
+    },
+    // Il percorso guidato guarda tutti i dati del database: la sua prova gira da sola, dopo
+    // tutte le altre, così nessuna prova in parallelo ne falsa lo stato.
+    {
+      name: "percorso-guidato",
+      use: { ...devices["Desktop Chrome"] },
+      testMatch: /setup-guide\.spec\.ts/,
+      dependencies: ["chromium"],
+    },
+  ],
   webServer: {
     command: `npm run build && npm run start -- --port ${port}`,
     url: `http://localhost:${port}`,
