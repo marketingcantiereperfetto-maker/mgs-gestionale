@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { isTestProject } from "../e2e/support/temporary-users";
+import { isTestProject } from "@/lib/supabase/test-project";
 
 describe("i test con la chiave di amministrazione lavorano solo sul progetto di prova", () => {
   it("riconosce solo l'indirizzo del progetto di prova", () => {

@@ -74,6 +74,8 @@ Aggiornare a ogni traguardo. Una decisione cambiata non si cancella: si aggiunge
 - **Registro delle modifiche:** pagina «Impostazioni → Registro delle modifiche», solo per il titolare (per ora l'amministrazione economica non ha la pagina, pur potendo leggere il registro).
 - **Test che cancellano dati:** usano la chiave di amministrazione solo sul progetto Supabase di prova (riferimento `rozukexrurbadsiznmby`) e si rifiutano di partire su qualunque altro progetto. Mai su produzione. Creano solo dati inventati e li cancellano alla fine; le righe del registro su quei dati restano.
 - **Avatar:** iniziali del nome del profilo; se manca, le prime due lettere dell'email.
+- **Doppio invio (dopo la prova della richiesta n. 8):** ogni modulo si blocca durante l'invio (pulsante disabilitato con testo d'attesa, secondo invio rifiutato) e conferma l'esito con un messaggio breve, annunciato ai lettori di schermo. Ogni creazione porta una chiave unica nel database, così un invio ripetuto non crea doppioni. Lo stesso IBAN non può comparire due volte sulla stessa società («Questo conto è già presente»). Regola aggiunta a `CLAUDE.md`.
+- **Società con lo stesso nome o la stessa partita IVA:** per ora non sono bloccate (la chiave di creazione ferma solo il doppio invio). Da decidere se vietare due società con la stessa partita IVA.
 
 ## Aperte (da decidere prima della funzione relativa)
 - Arrotondamenti: prima del motore dei prezzi.

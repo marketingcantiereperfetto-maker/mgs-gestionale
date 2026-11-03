@@ -1,6 +1,7 @@
 import { expect, test, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { deleteTestCompanies, testPrefix } from "./support/test-data";
+import { admin } from "./support/temporary-users";
 import {
   canUseTemporaryUsers,
   createTemporaryUser,
@@ -85,7 +86,7 @@ test("i dati sbagliati vengono rifiutati, quelli giusti salvati", async ({ page 
   await expect(page.getByLabel("Paese (codice a due lettere)")).toHaveValue("IT");
   await page.getByRole("button", { name: "Salva" }).click();
 
-  await expect(page.getByText("Dati salvati.")).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Società salvata." })).toBeVisible();
   await expect(page.getByText("Pronta per emettere preventivi.")).toBeVisible();
 });
 
@@ -159,4 +160,62 @@ test("il consulente non apre società e brand, neanche dall'indirizzo", async ({
     await page.goto(href);
     await expect(page, href).toHaveURL("/?accesso=negato");
   }
+});
+
+test("doppio clic su «Crea società»: si crea una sola società", async ({ page }) => {
+  const name = `${testPrefix} doppio clic ${randomUUID().slice(0, 8)} Srl`;
+  await signIn(page, owner);
+  await page.goto("/impostazioni/societa-e-brand/societa/nuova");
+  await page.getByLabel("Ragione sociale").fill(name);
+  await page.getByRole("button", { name: "Crea società" }).dblclick();
+  await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
+  await expect(page.getByRole("status").filter({ hasText: "Società creata." })).toBeVisible();
+
+  const { data } = await admin()
+    .from("companies")
+    .select("id, creation_key")
+    .eq("legal_name", name);
+  expect(data).toHaveLength(1);
+  expect(data?.[0]?.creation_key).toBeTruthy();
+});
+
+test("doppio clic su «Aggiungi conto»: un solo conto; lo stesso IBAN non si ripete", async ({
+  page,
+}) => {
+  await signIn(page, owner);
+  await page.goto(companyUrl);
+  const accounts = page.getByTestId("bank-account");
+  const iban = page.getByLabel("IBAN");
+  const before = await accounts.count();
+
+  await iban.fill("GB82 WEST 1234 5698 7654 32");
+  await page.getByRole("button", { name: "Aggiungi conto" }).dblclick();
+  await expect(page.getByRole("status").filter({ hasText: "Conto aggiunto." })).toBeVisible();
+  await expect(accounts).toHaveCount(before + 1);
+  // Dopo un attimo, nessuna seconda riga arrivata in ritardo.
+  await page.reload();
+  await expect(accounts.filter({ hasText: "GB82" })).toHaveCount(1);
+
+  await iban.fill("gb82west12345698765432");
+  await page.getByRole("button", { name: "Aggiungi conto" }).click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Questo conto è già presente." }),
+  ).toBeVisible();
+  await expect(accounts.filter({ hasText: "GB82" })).toHaveCount(1);
+});
+
+test("durante l'invio il pulsante si disabilita e mostra l'attesa", async ({ page }) => {
+  await signIn(page, owner);
+  await page.goto(companyUrl);
+  // Rallenta la risposta del server per vedere lo stato d'attesa.
+  await page.route("**/*", async (route) => {
+    if (route.request().method() === "POST") await new Promise((done) => setTimeout(done, 800));
+    await route.continue();
+  });
+  await page.getByRole("button", { name: "Salva" }).click();
+  const waiting = page.getByRole("button", { name: "Salvataggio…" });
+  await expect(waiting).toBeVisible();
+  await expect(waiting).toBeDisabled();
+  await expect(page.getByRole("status").filter({ hasText: "Società salvata." })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Salva" })).toBeEnabled();
 });

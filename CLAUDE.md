@@ -37,6 +37,7 @@ Nomi tecnici in inglese; testi dell'interfaccia in italiano. Glossario:
 preventivo=quote, ordine=order, cliente=customer, materiale=material, lavorazione=operation,
 Wizard=wizard, categoria=category, società=company, brand=brand, rata=installment,
 condizione di pagamento=payment_terms, soglia di sicurezza=safety_threshold.
+**Ogni creazione è protetta dal doppio invio**: nell'interfaccia con `ActionForm` e `SubmitButton` (`src/components/action-form.tsx`: pulsante disabilitato con testo d'attesa, secondo invio rifiutato, conferma breve), nel database con una chiave di creazione unica (`creation_key`) e, dove ha senso, un vincolo di unicità sui dati (per esempio società + IBAN).
 Una funzione fa una cosa. Commenti solo dove la regola di business non è ovvia, con riferimento al capitolo del documento.
 Le modifiche al database sono sempre migrazioni Supabase in `supabase/migrations`, create con la CLI ufficiale, solo in avanti.
 Ogni migrazione si applica prima al database di prova; prima di toccare la produzione, copia di sicurezza.

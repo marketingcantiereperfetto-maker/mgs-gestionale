@@ -1,16 +1,17 @@
 "use client";
 
 import { useActionState } from "react";
-import { FieldError, Notice, fieldClass, primaryButton } from "@/components/ui";
+import { ActionFeedback, ActionForm, SubmitButton } from "@/components/action-form";
+import { FieldError, fieldClass, primaryButton } from "@/components/ui";
 import { createCompany, type CompanyFormState } from "@/server/companies/actions";
 
 const initialState: CompanyFormState = { error: null, fieldErrors: {} };
 
 export function NewCompanyForm() {
-  const [state, formAction, pending] = useActionState(createCompany, initialState);
+  const [state, formAction] = useActionState(createCompany, initialState);
   return (
-    <form action={formAction} className="space-y-4">
-      {state.error ? <Notice tone="warning">{state.error}</Notice> : null}
+    <ActionForm action={formAction} className="space-y-4">
+      <input type="hidden" name="creationKey" defaultValue="" />
       <label className="block text-[13px] text-ink-muted">
         Ragione sociale
         <input
@@ -24,9 +25,10 @@ export function NewCompanyForm() {
         />
         <FieldError id="legalName-error" message={state.fieldErrors.legalName} />
       </label>
-      <button type="submit" disabled={pending} className={primaryButton}>
+      <SubmitButton pendingLabel="Creazione…" className={primaryButton}>
         Crea società
-      </button>
-    </form>
+      </SubmitButton>
+      <ActionFeedback state={state} />
+    </ActionForm>
   );
 }

@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { Page } from "@playwright/test";
 import { randomBytes, randomUUID } from "node:crypto";
 import type { Database } from "../../../src/lib/supabase/database.types";
+import { isTestProject, testProjectRef } from "../../../src/lib/supabase/test-project";
 import type { UserRole } from "../../../src/server/auth/permissions";
 
 // Utenti di prova temporanei: creati per il test, con password generate solo in memoria,
@@ -13,19 +14,6 @@ const secretKey = process.env.SUPABASE_SECRET_KEY;
 export const canUseTemporaryUsers = Boolean(url && secretKey);
 
 export type TemporaryUser = { id: string; email: string; password: string; role: UserRole };
-
-// Riferimento del progetto Supabase di prova: con la chiave di amministrazione questi aiuti
-// creano e cancellano dati, quindi si rifiutano di lavorare su qualunque altro progetto.
-export const testProjectRef = "rozukexrurbadsiznmby";
-
-export function isTestProject(address: string | undefined): boolean {
-  if (!address) return false;
-  try {
-    return new URL(address).hostname === `${testProjectRef}.supabase.co`;
-  } catch {
-    return false;
-  }
-}
 
 export function admin() {
   if (!isTestProject(url)) {

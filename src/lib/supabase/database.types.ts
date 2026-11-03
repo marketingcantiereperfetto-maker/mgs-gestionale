@@ -49,6 +49,7 @@ export type Database = {
           address_province: string | null;
           address_street: string | null;
           created_at: string;
+          creation_key: string | null;
           email: string | null;
           id: string;
           is_active: boolean;
@@ -64,6 +65,7 @@ export type Database = {
           address_province?: string | null;
           address_street?: string | null;
           created_at?: string;
+          creation_key?: string | null;
           email?: string | null;
           id?: string;
           is_active?: boolean;
@@ -79,6 +81,7 @@ export type Database = {
           address_province?: string | null;
           address_street?: string | null;
           created_at?: string;
+          creation_key?: string | null;
           email?: string | null;
           id?: string;
           is_active?: boolean;
@@ -93,6 +96,7 @@ export type Database = {
         Row: {
           company_id: string;
           created_at: string;
+          creation_key: string | null;
           iban: string;
           id: string;
           is_active: boolean;
@@ -103,6 +107,7 @@ export type Database = {
         Insert: {
           company_id: string;
           created_at?: string;
+          creation_key?: string | null;
           iban: string;
           id?: string;
           is_active?: boolean;
@@ -113,6 +118,7 @@ export type Database = {
         Update: {
           company_id?: string;
           created_at?: string;
+          creation_key?: string | null;
           iban?: string;
           id?: string;
           is_active?: boolean;

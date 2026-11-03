@@ -1,7 +1,8 @@
 "use client";
 
 import { useActionState, useState } from "react";
-import { FieldError, Notice, fieldClass, primaryButton, secondaryButton } from "@/components/ui";
+import { ActionFeedback, ActionForm, SubmitButton } from "@/components/action-form";
+import { FieldError, fieldClass, primaryButton, secondaryButton } from "@/components/ui";
 import { countryName, type CompanyField } from "@/domain/company/company";
 import { updateCompany, type CompanyFormState } from "@/server/companies/actions";
 import type { Company } from "@/server/companies/queries";
@@ -51,7 +52,7 @@ function Field({
 }
 
 export function CompanyForm({ company }: { company: Company }) {
-  const [state, formAction, pending] = useActionState(updateCompany, initialState);
+  const [state, formAction] = useActionState(updateCompany, initialState);
   // Il paese parte vuoto: «Italia» si sceglie con un clic e si salva con «Salva».
   const [country, setCountry] = useState(company.addressCountry ?? "");
   const errors = state.fieldErrors;
@@ -59,8 +60,7 @@ export function CompanyForm({ company }: { company: Company }) {
   const countryLabel = countryName(country.trim().toUpperCase());
 
   return (
-    <form action={formAction} className="space-y-4">
-      {state.error ? <Notice tone="warning">{state.error}</Notice> : null}
+    <ActionForm action={formAction} className="space-y-4">
       <input type="hidden" name="id" value={company.id} />
       <Field name="legalName" value={value("legalName")} error={errors.legalName} required />
       <div className="grid gap-4 sm:grid-cols-2">
@@ -108,9 +108,10 @@ export function CompanyForm({ company }: { company: Company }) {
         <FieldError id="addressCountry-error" message={errors.addressCountry} />
       </fieldset>
 
-      <button type="submit" disabled={pending} className={primaryButton}>
+      <SubmitButton pendingLabel="Salvataggio…" className={primaryButton}>
         Salva
-      </button>
-    </form>
+      </SubmitButton>
+      <ActionFeedback state={state} />
+    </ActionForm>
   );
 }

@@ -6,7 +6,7 @@ begin;
 set local role postgres;
 set local search_path = public, extensions;
 
-select plan(16);
+select plan(20);
 
 insert into auth.users (id, email, encrypted_password, aud, role) values
   ('00000000-0000-4000-8000-0000000000a1', 'titolare@prova.test', '', 'authenticated', 'authenticated'),
@@ -54,6 +54,32 @@ select lives_ok(
 select is((select is_default from public.company_bank_accounts where id = (select id from ids where name = 'first')), true, 'il primo conto è predefinito');
 select is((select is_default from public.company_bank_accounts where id = (select id from ids where name = 'second')), false, 'il secondo conto non è predefinito');
 
+-- Doppioni: lo stesso IBAN non compare due volte sulla stessa società; la stessa chiave di
+-- creazione (doppio invio dello stesso modulo) non crea un secondo record.
+select throws_ok(
+  $$insert into public.company_bank_accounts (company_id, iban)
+    select id, 'IT60X0542811101000000123456' from ids where name = 'company'$$,
+  '23505', null, 'lo stesso IBAN non si aggiunge due volte alla stessa società'
+);
+select lives_ok(
+  $$with c as (insert into public.companies (legal_name, creation_key)
+      values ('Altra Società Inventata Srl', '00000000-0000-4000-8000-0000000000c1') returning id)
+    insert into public.company_bank_accounts (company_id, iban, creation_key)
+    select id, 'IT60X0542811101000000123456', '00000000-0000-4000-8000-0000000000c2' from c$$,
+  'lo stesso IBAN può stare su un''altra società'
+);
+select throws_ok(
+  $$insert into public.companies (legal_name, creation_key)
+    values ('Altra Società Inventata Srl', '00000000-0000-4000-8000-0000000000c1')$$,
+  '23505', null, 'un secondo invio della stessa società non crea un doppione'
+);
+select throws_ok(
+  $$insert into public.company_bank_accounts (company_id, iban, creation_key)
+    select id, 'GB82WEST12345698765432', '00000000-0000-4000-8000-0000000000c2'
+    from ids where name = 'company'$$,
+  '23505', null, 'un secondo invio dello stesso conto non crea un doppione'
+);
+
 -- Il predefinito non si disattiva finché c'è un altro conto attivo.
 select throws_ok(
   $$select public.set_bank_account_active((select id from ids where name = 'first'), false)$$,
@@ -90,7 +116,7 @@ select ok(
   (select count(*) from public.audit_log
     where table_name in ('companies', 'company_bank_accounts')
       and actor_id = '00000000-0000-4000-8000-0000000000a1'
-      and occurred_at is not null) >= 7,
+      and occurred_at is not null) >= 9,
   'il registro contiene le modifiche del titolare con chi e quando'
 );
 

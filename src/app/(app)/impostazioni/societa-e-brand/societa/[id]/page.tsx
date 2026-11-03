@@ -2,18 +2,18 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { companyReadiness } from "@/domain/company/company";
 import { companiesPath } from "@/lib/company-paths";
-import { Badge, BackLink, Card, Notice, PageHeader, secondaryButton } from "@/components/ui";
+import { Badge, BackLink, Card, Notice, PageHeader } from "@/components/ui";
 import { requirePage } from "@/server/auth/page-access";
-import { setCompanyActive } from "@/server/companies/actions";
 import { getCompany } from "@/server/companies/queries";
 import { BankAccounts } from "./bank-accounts";
+import { CompanyActiveForm } from "./company-active-form";
 import { CompanyForm } from "./company-form";
 
 export const metadata: Metadata = { title: "Società · Gestionale MGS Group" };
 
 type Props = {
   params: Promise<{ id: string }>;
-  searchParams: Promise<{ salvata?: string; conti?: string }>;
+  searchParams: Promise<{ esito?: string; conti?: string }>;
 };
 
 const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
@@ -21,7 +21,7 @@ const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{1
 export default async function CompanyPage({ params, searchParams }: Props) {
   await requirePage(companiesPath);
   const { id } = await params;
-  const { salvata, conti } = await searchParams;
+  const { esito, conti } = await searchParams;
   if (!uuidPattern.test(id)) notFound();
   const company = await getCompany(id);
   if (!company) notFound();
@@ -38,7 +38,7 @@ export default async function CompanyPage({ params, searchParams }: Props) {
       </div>
 
       <div className="mt-6 space-y-2" data-testid="readiness">
-        {salvata ? <Notice tone="success">Dati salvati.</Notice> : null}
+        {esito === "creata" ? <Notice tone="success">Società creata.</Notice> : null}
         {readiness.ready ? (
           <Notice tone="success">Pronta per emettere preventivi.</Notice>
         ) : (
@@ -69,13 +69,7 @@ export default async function CompanyPage({ params, searchParams }: Props) {
             ? "Una società disattivata non compare negli elenchi; i suoi dati e lo storico restano."
             : "La società tornerà negli elenchi."}
         </p>
-        <form action={setCompanyActive}>
-          <input type="hidden" name="id" value={company.id} />
-          <input type="hidden" name="active" value={String(!company.isActive)} />
-          <button type="submit" className={secondaryButton}>
-            {company.isActive ? "Disattiva" : "Riattiva"}
-          </button>
-        </form>
+        <CompanyActiveForm id={company.id} isActive={company.isActive} />
       </Card>
     </main>
   );
