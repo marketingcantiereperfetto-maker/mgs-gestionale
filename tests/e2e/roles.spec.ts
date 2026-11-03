@@ -73,9 +73,9 @@ const mainEntries = [
   },
   {
     label: "Impostazioni",
-    item: "Società e brand",
-    href: "/impostazioni/societa-e-brand",
-    title: "Società e brand",
+    item: "Reparti e macchinari",
+    href: "/impostazioni/reparti-e-macchinari",
+    title: "Reparti e macchinari",
   },
   { label: "Manuali", href: "/manuali", title: "Manuali" },
 ];

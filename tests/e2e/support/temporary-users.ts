@@ -2,6 +2,7 @@ import { createClient } from "@supabase/supabase-js";
 import type { Page } from "@playwright/test";
 import { randomBytes, randomUUID } from "node:crypto";
 import type { Database } from "../../../src/lib/supabase/database.types";
+import { isTestProject, testProjectRef } from "../../../src/lib/supabase/test-project";
 import type { UserRole } from "../../../src/server/auth/permissions";
 
 // Utenti di prova temporanei: creati per il test, con password generate solo in memoria,
@@ -14,7 +15,13 @@ export const canUseTemporaryUsers = Boolean(url && secretKey);
 
 export type TemporaryUser = { id: string; email: string; password: string; role: UserRole };
 
-function admin() {
+export function admin() {
+  if (!isTestProject(url)) {
+    throw new Error(
+      `Rifiutato: NEXT_PUBLIC_SUPABASE_URL non è il progetto di prova (${testProjectRef}). ` +
+        "I test che cancellano dati non partono su altri progetti.",
+    );
+  }
   return createClient<Database>(url!, secretKey!, {
     auth: { persistSession: false, autoRefreshToken: false },
   });
@@ -48,7 +55,8 @@ export async function createTemporaryUser(role: UserRole): Promise<TemporaryUser
 // Il profilo si cancella insieme all'utente (on delete cascade).
 export async function deleteTemporaryUser(user: TemporaryUser): Promise<void> {
   const { error } = await admin().auth.admin.deleteUser(user.id);
-  if (error) throw new Error(`Utente di prova ${user.id} non cancellato: ${error.code ?? ""}`);
+  if (error && error.code !== "user_not_found")
+    throw new Error(`Utente di prova ${user.id} non cancellato: ${error.code ?? ""}`);
 }
 
 export async function signIn(page: Page, user: TemporaryUser): Promise<void> {
@@ -60,13 +68,15 @@ export async function signIn(page: Page, user: TemporaryUser): Promise<void> {
 }
 
 // Se un test precedente si è interrotto prima della pulizia, cancella i suoi utenti di prova.
-// Tocca solo gli indirizzi e2e-…@prova.test, che nessuna persona reale può avere.
+// Tocca solo gli indirizzi e2e-…@prova.test, che nessuna persona reale può avere, creati da
+// più di un'ora: quelli recenti possono appartenere a prove in corso in parallelo.
 export async function deleteLeftoverTemporaryUsers(): Promise<void> {
   const supabase = admin();
   const { data, error } = await supabase.auth.admin.listUsers({ perPage: 1000 });
   if (error) throw new Error(`Elenco utenti non letto: ${error.code ?? ""}`);
   for (const user of data.users) {
-    if (/^e2e-[a-z-]+-[0-9a-f]{8}@prova\.test$/.test(user.email ?? "")) {
+    const isOld = Date.now() - new Date(user.created_at).getTime() > 60 * 60 * 1000;
+    if (isOld && /^e2e-[a-z-]+-[0-9a-f]{8}@prova\.test$/.test(user.email ?? "")) {
       await supabase.auth.admin.deleteUser(user.id);
     }
   }

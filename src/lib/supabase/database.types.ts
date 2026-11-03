@@ -43,24 +43,98 @@ export type Database = {
       };
       companies: {
         Row: {
+          address_city: string | null;
+          address_country: string | null;
+          address_postal_code: string | null;
+          address_province: string | null;
+          address_street: string | null;
           created_at: string;
+          creation_key: string | null;
+          email: string | null;
           id: string;
+          is_active: boolean;
           legal_name: string;
+          tax_code: string | null;
+          updated_at: string;
+          vat_number: string | null;
+        };
+        Insert: {
+          address_city?: string | null;
+          address_country?: string | null;
+          address_postal_code?: string | null;
+          address_province?: string | null;
+          address_street?: string | null;
+          created_at?: string;
+          creation_key?: string | null;
+          email?: string | null;
+          id?: string;
+          is_active?: boolean;
+          legal_name: string;
+          tax_code?: string | null;
+          updated_at?: string;
+          vat_number?: string | null;
+        };
+        Update: {
+          address_city?: string | null;
+          address_country?: string | null;
+          address_postal_code?: string | null;
+          address_province?: string | null;
+          address_street?: string | null;
+          created_at?: string;
+          creation_key?: string | null;
+          email?: string | null;
+          id?: string;
+          is_active?: boolean;
+          legal_name?: string;
+          tax_code?: string | null;
+          updated_at?: string;
+          vat_number?: string | null;
+        };
+        Relationships: [];
+      };
+      company_bank_accounts: {
+        Row: {
+          company_id: string;
+          created_at: string;
+          creation_key: string | null;
+          iban: string;
+          id: string;
+          is_active: boolean;
+          is_default: boolean;
+          label: string | null;
           updated_at: string;
         };
         Insert: {
+          company_id: string;
           created_at?: string;
+          creation_key?: string | null;
+          iban: string;
           id?: string;
-          legal_name: string;
+          is_active?: boolean;
+          is_default?: boolean;
+          label?: string | null;
           updated_at?: string;
         };
         Update: {
+          company_id?: string;
           created_at?: string;
+          creation_key?: string | null;
+          iban?: string;
           id?: string;
-          legal_name?: string;
+          is_active?: boolean;
+          is_default?: boolean;
+          label?: string | null;
           updated_at?: string;
         };
-        Relationships: [];
+        Relationships: [
+          {
+            foreignKeyName: "company_bank_accounts_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+        ];
       };
       profile_companies: {
         Row: {
@@ -132,6 +206,14 @@ export type Database = {
     Functions: {
       health_check: { Args: never; Returns: Json };
       mark_password_set: { Args: never; Returns: undefined };
+      set_bank_account_active: {
+        Args: { account_id: string; active: boolean };
+        Returns: undefined;
+      };
+      set_default_bank_account: {
+        Args: { account_id: string };
+        Returns: undefined;
+      };
       user_has_password: { Args: { target_user_id: string }; Returns: boolean };
     };
     Enums: {

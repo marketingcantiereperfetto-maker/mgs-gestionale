@@ -7,7 +7,7 @@ export default function NotFound() {
       <p className="mt-1 text-ink-muted">L&apos;indirizzo non corrisponde a nessuna sezione.</p>
       <Link
         href="/"
-        className="mt-6 inline-block rounded-full bg-action px-4 py-2 font-medium text-white"
+        className="button button-primary mt-6 inline-block rounded-full px-4 py-2 font-medium"
       >
         Torna alla dashboard
       </Link>
