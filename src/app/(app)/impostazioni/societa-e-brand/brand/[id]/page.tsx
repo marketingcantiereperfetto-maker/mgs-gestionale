@@ -1,5 +1,6 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
+import { AuditHistory } from "@/components/audit-history";
 import { LogoUploader } from "@/components/logo-uploader";
 import { Badge, BackLink, Card, Notice, PageHeader } from "@/components/ui";
 import { companiesPath } from "@/lib/company-paths";
@@ -64,6 +65,7 @@ export default async function BrandPage({ params, searchParams }: Props) {
         </p>
         <BrandActiveForm id={brand.id} isActive={brand.isActive} />
       </Card>
+      <AuditHistory filter={{ brandId: brand.id }} />
     </main>
   );
 }
