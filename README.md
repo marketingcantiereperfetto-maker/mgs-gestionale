@@ -52,5 +52,6 @@ Controlli prima di ogni commit: `npm run check` (tipi, stile, formattazione, tes
 I test in `tests/integration` usano il database di prova di `.env.local`; senza quel file vengono saltati.
 
 Database: `npm run db:status` (migrazioni applicate), `npm run db:push` (applica le nuove al database collegato).
+Test del database: `npm run test:db` (prove in `supabase/tests/database` sul database di prova, dentro una transazione annullata: non lascia dati).
 Primo titolare: `npm run utenti:crea-titolare -- --email nome@dominio.it --sito https://mgs-gestionale.vercel.app` (prova senza effetti; con `--conferma` crea l'invito e stampa nel Terminale il link personale, valido 1 ora, da non copiare in chat).
 Test nel browser: `npm run test:e2e` (la prima volta: `npx playwright install chromium`).

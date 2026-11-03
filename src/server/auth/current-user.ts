@@ -11,6 +11,7 @@ export type CurrentUser = AppUser & {
 export type Session =
   | { status: "anonymous" }
   | { status: "without-profile"; email: string }
+  | { status: "password-required" }
   | { status: "active"; user: CurrentUser };
 
 export const getSession = cache(async (): Promise<Session> => {
@@ -24,11 +25,12 @@ export const getSession = cache(async (): Promise<Session> => {
   const email = typeof claims.email === "string" ? claims.email : "";
   const { data: profile } = await supabase
     .from("profiles")
-    .select("role, full_name, is_active, profile_companies(company_id)")
+    .select("role, full_name, is_active, password_set_at, profile_companies(company_id)")
     .eq("user_id", claims.sub)
     .maybeSingle();
 
   if (!profile || !profile.is_active) return { status: "without-profile", email };
+  if (!profile.password_set_at) return { status: "password-required" };
 
   return {
     status: "active",

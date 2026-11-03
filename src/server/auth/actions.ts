@@ -53,6 +53,9 @@ export async function setPassword(_state: FormState, formData: FormData): Promis
           : "Non è stato possibile salvare la password. Riprova.",
     };
   }
+  // Solo ora il profilo risulta «password scelta» e il gestionale smette di chiederla.
+  const { error: markError } = await supabase.rpc("mark_password_set");
+  if (markError) return { error: "Password salvata, ma non registrata nel profilo. Riprova." };
   redirect("/");
 }
 
