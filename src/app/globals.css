@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
-/* Stile semplice ispirato alle interfacce Apple (cap. 21): sfondo grigio chiaro,
-   schede bianche arrotondate, un solo colore per le azioni. */
+/* Stile dell'interfaccia: docs/05_STILE_INTERFACCIA.md (cap. 21). Colori in un solo punto;
+   le coppie testo/sfondo sono verificate per il contrasto AA in tests/unit/contrast.test.ts. */
 @theme {
   --color-page: #f5f5f7;
   --color-card: #ffffff;
@@ -9,6 +9,17 @@
   --color-ink-muted: #6e6e73;
   --color-line: #d2d2d7;
   --color-action: #0071e3;
+  --color-secondary: #e8e8ed;
+  --color-bar: rgba(246, 246, 248, 0.94);
+  --color-bar-line: #d9d9de;
+  --color-hover: #e3e3e8;
+  --color-info-bg: #e8f1fd;
+  --color-info: #0058b0;
+  --color-success-bg: #e6f6ea;
+  --color-success: #1a6b34;
+  --color-warning-bg: #fff4e5;
+  --color-warning: #7a4a00;
+  --color-error: #b3261e;
   --font-sans:
     -apple-system, BlinkMacSystemFont, "SF Pro Text", "Helvetica Neue", Helvetica, Arial, sans-serif;
 }
@@ -16,4 +27,17 @@
 body {
   background-color: var(--color-page);
   color: var(--color-ink);
+  font-size: 14px;
+}
+
+/* Chi chiede di ridurre i movimenti non vede transizioni né animazioni. */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

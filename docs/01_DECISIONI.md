@@ -48,9 +48,21 @@ Aggiornare a ogni traguardo. Una decisione cambiata non si cancella: si aggiunge
 - **Conferma dell'invito:** aprire il link non verifica nulla; il codice si usa solo dopo il clic su «Attiva l'account» (protegge dai programmi che aprono i link da soli).
 - **Password scelta solo dall'utente (correzione dopo la prova del primo titolare):** l'invito non assegna nessuna password; il comando lo verifica e si ferma se l'utente invitato ne ha una. Il profilo ha il segno «password scelta» (`password_set_at`): finché è vuoto, chi è collegato vede solo `/imposta-password`. Il segno si scrive solo dopo il salvataggio della password e solo se nel sistema di accesso risulta davvero una password salvata: chiamare la funzione a mano non basta. I profili già esistenti partono senza segno: il titolare sceglie la password ancora una volta.
 - **Messaggi di /imposta-password:** errori distinti in italiano (password uguale a quella attuale, troppo debole o corta, sessione scaduta, errore generico).
+- **Password uguale a quella attuale:** nessun percorso speciale. Su /imposta-password si chiede sempre una password diversa da quella salvata; il profilo non viene segnato «password scelta» in questo caso (deciso dal titolare il 3 novembre 2026).
+
+## Decise il 3 novembre 2026 (guscio dell'app, giorno 4)
+- **Voci del menu per ruolo — proposta provvisoria, da rivedere quando arrivano i dati:**
+  - Tutti: Dashboard, Preventivi, Ordini, Clienti, Statistiche, Manuali (il filtro sui contenuti arriverà con i dati, per esempio il consulente vede solo i propri risultati).
+  - Catalogo: tutti; chi non gestisce il catalogo vede solo «Wizard (articoli)» e «Offerte attive» (catalogo commerciale, §21.1). Categorie, materiali, lavorazioni e regole di ricarico: titolare e amministrazione cataloghi.
+  - Controllo di gestione: titolare e amministrazione economica.
+  - Impostazioni: solo il titolare.
+  - «Richieste di autorizzazione» e «Consulenti»: titolare e responsabile commerciale.
+- **Permessi anche sul server:** ogni pagina controlla `can()`; chi apre a mano l'indirizzo di una sezione non consentita torna alla dashboard con un avviso.
+- **Scorciatoie da tastiera:** non si mostrano nelle tendine finché non funzionano (aggiornato `05_STILE_INTERFACCIA.md`).
+- **Formati:** gli importi si formattano da testo decimale esatto, senza arrotondare (gli arrotondamenti restano nel motore dei prezzi); punto delle migliaia sempre presente (1.234,50 €).
+- **Contrasto:** il blu delle azioni come testo si usa solo su schede bianche, non sullo sfondo grigio della pagina (sotto il 4,5:1).
 
 ## Aperte (da decidere prima della funzione relativa)
-- Password uguale a quella attuale su /imposta-password: considerarla «scelta» e segnare il profilo, oppure chiederne sempre una diversa (proposta in attesa del titolare).
 - Arrotondamenti: prima del motore dei prezzi.
 - Numerazione preventivi e ordini, «Duplica per», taglie come righe o note: prima dei Wizard.
 - Articolo inserito al volo dal preventivo: subito utilizzabile o in bozza.

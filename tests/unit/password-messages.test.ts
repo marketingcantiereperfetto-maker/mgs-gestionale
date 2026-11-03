@@ -10,7 +10,7 @@ describe("messaggi di errore della password", () => {
 
   it("password troppo debole o corta", () => {
     expect(passwordErrorMessage({ code: "weak_password" })).toBe(
-      "Password troppo debole o troppo corta: usa almeno 12 caratteri con lettere, numeri e simboli.",
+      "Password troppo debole o troppo corta: usa almeno 12 caratteri.",
     );
   });
 
