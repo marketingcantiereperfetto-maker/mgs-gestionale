@@ -132,3 +132,19 @@ describe("pronta per emettere preventivi", () => {
     });
   });
 });
+
+describe("nome del brand", () => {
+  it("è obbligatorio e perde gli spazi in eccesso", async () => {
+    const { parseBrandName, brandNameKey } = await import("@/domain/company/brand");
+    expect(parseBrandName("  Brand   Inventato ")).toEqual({
+      ok: true,
+      value: { name: "Brand Inventato" },
+    });
+    expect(parseBrandName("   ")).toEqual({
+      ok: false,
+      errors: { name: "Inserisci il nome del brand." },
+    });
+    // Maiuscole e spazi non contano nel confronto, come nel database.
+    expect(brandNameKey(" BRAND  inventato")).toBe(brandNameKey("brand inventato"));
+  });
+});

@@ -41,6 +41,39 @@ export type Database = {
         };
         Relationships: [];
       };
+      brands: {
+        Row: {
+          created_at: string;
+          creation_key: string | null;
+          id: string;
+          is_active: boolean;
+          logo_path: string | null;
+          name: string;
+          name_key: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          creation_key?: string | null;
+          id?: string;
+          is_active?: boolean;
+          logo_path?: string | null;
+          name: string;
+          name_key?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          creation_key?: string | null;
+          id?: string;
+          is_active?: boolean;
+          logo_path?: string | null;
+          name?: string;
+          name_key?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [];
+      };
       companies: {
         Row: {
           address_city: string | null;
@@ -51,6 +84,7 @@ export type Database = {
           created_at: string;
           creation_key: string | null;
           email: string | null;
+          fallback_logo_path: string | null;
           id: string;
           is_active: boolean;
           legal_name: string;
@@ -67,6 +101,7 @@ export type Database = {
           created_at?: string;
           creation_key?: string | null;
           email?: string | null;
+          fallback_logo_path?: string | null;
           id?: string;
           is_active?: boolean;
           legal_name: string;
@@ -83,6 +118,7 @@ export type Database = {
           created_at?: string;
           creation_key?: string | null;
           email?: string | null;
+          fallback_logo_path?: string | null;
           id?: string;
           is_active?: boolean;
           legal_name?: string;
@@ -129,6 +165,39 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "company_bank_accounts_company_id_fkey";
+            columns: ["company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      company_brands: {
+        Row: {
+          brand_id: string;
+          company_id: string;
+          created_at: string;
+        };
+        Insert: {
+          brand_id: string;
+          company_id: string;
+          created_at?: string;
+        };
+        Update: {
+          brand_id?: string;
+          company_id?: string;
+          created_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "company_brands_brand_id_fkey";
+            columns: ["brand_id"];
+            isOneToOne: false;
+            referencedRelation: "brands";
+            referencedColumns: ["id"];
+          },
+          {
+            foreignKeyName: "company_brands_company_id_fkey";
             columns: ["company_id"];
             isOneToOne: false;
             referencedRelation: "companies";

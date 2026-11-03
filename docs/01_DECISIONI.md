@@ -75,7 +75,15 @@ Aggiornare a ogni traguardo. Una decisione cambiata non si cancella: si aggiunge
 - **Test che cancellano dati:** usano la chiave di amministrazione solo sul progetto Supabase di prova (riferimento `rozukexrurbadsiznmby`) e si rifiutano di partire su qualunque altro progetto. Mai su produzione. Creano solo dati inventati e li cancellano alla fine; le righe del registro su quei dati restano.
 - **Avatar:** iniziali del nome del profilo; se manca, le prime due lettere dell'email.
 - **Doppio invio (dopo la prova della richiesta n. 8):** ogni modulo si blocca durante l'invio (pulsante disabilitato con testo d'attesa, secondo invio rifiutato) e conferma l'esito con un messaggio breve, annunciato ai lettori di schermo. Ogni creazione porta una chiave unica nel database, così un invio ripetuto non crea doppioni. Lo stesso IBAN non può comparire due volte sulla stessa società («Questo conto è già presente»). Regola aggiunta a `CLAUDE.md`.
-- **Società con lo stesso nome o la stessa partita IVA:** per ora non sono bloccate (la chiave di creazione ferma solo il doppio invio). Da decidere se vietare due società con la stessa partita IVA.
+- **Società con lo stesso nome:** ammesse (la chiave di creazione ferma solo il doppio invio).
+
+## Decise il 3 novembre 2026 (brand e loghi, parte B del giorno 5)
+- **Partita IVA unica:** due società non possono avere la stessa partita IVA quando è compilata, contando anche le disattivate («Esiste già una società con questa partita IVA»).
+- **Nome del brand unico**, senza differenze di maiuscole e spazi, anche tra i disattivati («Esiste già un brand con questo nome…»).
+- **Collegamento brand ↔ società:** si gestisce dalla scheda del brand; togliere un collegamento lo fa sparire (resta nel registro). La scheda avvisa, senza bloccare, se il brand resta senza società.
+- **Loghi:** il nome del file sull'archivio è sempre generato dal server (codice casuale + estensione del tipo riconosciuto), mai preso da quello dell'utente. Un logo sostituito resta nell'archivio privato; il brand punta al nuovo. Il logo di riserva della società usa lo stesso meccanismo.
+- **Limite di invio dei loghi:** Next.js permette di alzare il limite solo per tutte le azioni insieme; per questo il caricamento passa da un indirizzo dedicato (`/api/loghi`) con il suo limite (1 MB di file), mentre le altre azioni restano a 1 MB. L'indirizzo accetta solo richieste dal gestionale stesso.
+- **Indirizzi firmati dei loghi:** scadono in 5 minuti e non finiscono mai nel registro, nei messaggi di errore o nei log.
 
 ## Aperte (da decidere prima della funzione relativa)
 - Arrotondamenti: prima del motore dei prezzi.

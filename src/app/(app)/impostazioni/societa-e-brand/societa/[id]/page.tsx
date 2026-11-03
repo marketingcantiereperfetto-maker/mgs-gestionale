@@ -1,8 +1,12 @@
 import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { companyReadiness } from "@/domain/company/company";
-import { companiesPath } from "@/lib/company-paths";
-import { Badge, BackLink, Card, Notice, PageHeader } from "@/components/ui";
+import Link from "next/link";
+import { LogoUploader } from "@/components/logo-uploader";
+import { brandPath, companiesPath, newBrandPath } from "@/lib/company-paths";
+import { listBrands } from "@/server/brands/queries";
+import { signedLogoUrl } from "@/server/logos";
+import { Badge, BackLink, Card, Notice, PageHeader, focusRing } from "@/components/ui";
 import { requirePage } from "@/server/auth/page-access";
 import { getCompany } from "@/server/companies/queries";
 import { BankAccounts } from "./bank-accounts";
@@ -26,6 +30,8 @@ export default async function CompanyPage({ params, searchParams }: Props) {
   const company = await getCompany(id);
   if (!company) notFound();
 
+  const brands = (await listBrands()).filter((brand) => brand.companyIds.includes(company.id));
+  const fallbackLogoUrl = await signedLogoUrl(company.fallbackLogoPath);
   const activeAccounts = company.bankAccounts.filter((account) => account.isActive);
   const readiness = companyReadiness(company, activeAccounts.length > 0);
 
@@ -60,6 +66,42 @@ export default async function CompanyPage({ params, searchParams }: Props) {
           companyId={company.id}
           accounts={company.bankAccounts}
           showInactive={conti === "tutti"}
+        />
+      </Card>
+
+      <Card title="Brand">
+        {brands.length === 0 ? (
+          <p>Nessun brand collegato. Il collegamento si fa dalla scheda del brand.</p>
+        ) : (
+          <ul className="flex flex-wrap gap-3">
+            {brands.map((brand) => (
+              <li key={brand.id} className="flex items-center gap-2">
+                <Link
+                  href={brandPath(brand.id)}
+                  className={`rounded font-medium hover:underline ${focusRing}`}
+                >
+                  {brand.name}
+                </Link>
+                {!brand.isActive ? <Badge tone="warning">Disattivato</Badge> : null}
+              </li>
+            ))}
+          </ul>
+        )}
+        <Link
+          href={newBrandPath}
+          className={`mt-3 inline-block rounded text-[13px] text-action ${focusRing}`}
+        >
+          Aggiungi un brand
+        </Link>
+      </Card>
+
+      <Card title="Logo di riserva">
+        <p className="mb-3 text-ink-muted">Si usa quando il brand del documento non ha un logo.</p>
+        <LogoUploader
+          target="societa"
+          id={company.id}
+          logoUrl={fallbackLogoUrl}
+          alt={`Logo di riserva di ${company.legalName}`}
         />
       </Card>
 

@@ -11,14 +11,18 @@ import {
   type FieldErrors,
 } from "@/domain/company/company";
 import { companiesPath, companyPath } from "@/lib/company-paths";
-import { getCurrentUser } from "@/server/auth/current-user";
-import { can } from "@/server/auth/permissions";
+import {
+  canManageCompanies as allowed,
+  creationKey,
+  databaseMessage,
+  field,
+  isDuplicate,
+  notAllowed,
+  succeeded,
+  type Result,
+} from "@/server/action-helpers";
 import { createSupabaseServerClient } from "@/server/supabase";
 import { toCompanyColumns } from "./queries";
-
-// Esito di ogni azione: errore oppure conferma breve; i valori inviati tornano indietro, così
-// dopo un errore il modulo li mostra ancora. «done» conta le operazioni riuscite.
-type Result = { error: string | null; message?: string | null; done?: number };
 
 export type CompanyFormState = Result & {
   fieldErrors: FieldErrors<CompanyField>;
@@ -29,44 +33,6 @@ export type BankAccountFormState = Result & {
   values?: Partial<Record<BankAccountField, string>>;
 };
 export type ActionState = Result;
-
-const notAllowed = "Solo il titolare può gestire società e conti.";
-const uuidPattern = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
-
-function field(formData: FormData, name: string): string {
-  const value = formData.get(name);
-  return typeof value === "string" ? value : "";
-}
-
-// Chiave di creazione generata dal modulo: lo stesso invio ripetuto non crea due record.
-function creationKey(formData: FormData): string | null {
-  const key = field(formData, "creationKey");
-  return uuidPattern.test(key) ? key : null;
-}
-
-async function allowed(): Promise<boolean> {
-  return can(await getCurrentUser(), "companies.manage");
-}
-
-type DatabaseError = { code?: string; message: string };
-
-const isDuplicate = (error: DatabaseError, constraint: string) =>
-  error.code === "23505" && error.message.includes(constraint);
-
-// Errori del database tradotti: le regole sono anche lì, come seconda difesa.
-function databaseMessage(error: DatabaseError): string {
-  if (error.code === "42501") return notAllowed;
-  if (error.code === "P0001") return `${error.message}.`;
-  if (isDuplicate(error, "company_bank_accounts_company_iban_key")) {
-    return "Questo conto è già presente.";
-  }
-  if (error.code === "23514") return "Un dato non rispetta il formato richiesto.";
-  return "Salvataggio non riuscito. Riprova.";
-}
-
-function succeeded<State extends Result>(state: State, message: string): Result {
-  return { error: null, message, done: (state.done ?? 0) + 1 };
-}
 
 export async function createCompany(
   _state: CompanyFormState,
