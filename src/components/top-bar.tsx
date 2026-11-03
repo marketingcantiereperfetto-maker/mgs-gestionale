@@ -271,6 +271,16 @@ export function TopBar({ sections, user }: { sections: NavSection[]; user: TopBa
                 <p className="font-medium text-ink">{user.name}</p>
                 <p className="text-[13px] text-ink-muted">{user.roleLabel}</p>
               </div>
+              <div className="mt-1 border-t border-line/70 pt-1">
+                <Link
+                  href="/profilo"
+                  onClick={close}
+                  aria-current={pathname === "/profilo" ? "page" : undefined}
+                  className={itemClass}
+                >
+                  Il mio profilo
+                </Link>
+              </div>
               <form action={signOut} className="mt-1 border-t border-line/70 pt-1">
                 <button type="submit" className={itemClass}>
                   Esci

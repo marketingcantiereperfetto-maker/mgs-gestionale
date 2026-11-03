@@ -273,6 +273,14 @@ export type Database = {
       [_ in never]: never;
     };
     Functions: {
+      audit_actor_labels: {
+        Args: { actor_ids: string[] };
+        Returns: {
+          email: string;
+          full_name: string;
+          user_id: string;
+        }[];
+      };
       health_check: { Args: never; Returns: Json };
       mark_password_set: { Args: never; Returns: undefined };
       set_bank_account_active: {

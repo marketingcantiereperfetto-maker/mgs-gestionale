@@ -86,6 +86,12 @@ Aggiornare a ogni traguardo. Una decisione cambiata non si cancella: si aggiunge
 - **Stato dopo il salvataggio (dopo la prova della richiesta n. 9):** la schermata mostra sempre i dati salvati, senza ricaricare. Il difetto delle spunte dei collegamenti (salvate ma mostrate vuote) e quello del paese (mostrato come scritto, non come salvato) sono corretti; regola aggiunta a `CLAUDE.md`.
 - **Indirizzi firmati dei loghi:** scadono in 5 minuti e non finiscono mai nel registro, nei messaggi di errore o nei log.
 
+## Decise il 3 novembre 2026 (registro, profilo e percorso guidato, parte C del giorno 5)
+- **Registro delle modifiche, chi lo legge (conferma della regola del 3 novembre):** nel database lo leggono titolare e amministrazione economica, come già deciso; la pagina «Impostazioni → Registro delle modifiche» è solo del titolare, controllata sul server. Motivo: la regola era già approvata, oggi nessun utente ha il ruolo di amministrazione economica, e il database è pronto per quando quel ruolo avrà la sua pagina.
+- **Registro in italiano semplice:** chi, quando e cosa («Francesco ha creato la società X»); delle modifiche si mostrano solo i campi cambiati. Mai campi tecnici, percorsi dei file o indirizzi firmati dei loghi; l'IBAN appare mascherato. Le operazioni senza autore (procedure di pulizia sul database di prova) appaiono come «Procedura di manutenzione».
+- **Registro, filtri e pagine:** periodo (giornate intere in ora di Roma, anche nei giorni del cambio d'ora), persona e tipo di dato; 50 righe per pagina, ordinate per data e identificativo, con paginazione «dopo questa riga».
+- **Nome del profilo:** ognuno scrive il proprio nome dal menu utente («Il mio profilo»), facoltativo, fino a 80 caratteri. Il permesso nel database vale solo per la colonna del nome e solo sul proprio profilo: nessuno può cambiarsi ruolo o altri campi, nemmeno chiamando il database direttamente. Se il nome manca, il registro mostra l'email, letta da una funzione che risponde solo al titolare.
+
 ## Aperte (da decidere prima della funzione relativa)
 - Arrotondamenti: prima del motore dei prezzi.
 - Numerazione preventivi e ordini, «Duplica per», taglie come righe o note: prima dei Wizard.

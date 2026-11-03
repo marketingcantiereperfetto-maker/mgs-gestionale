@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { notFound } from "next/navigation";
 import { companyReadiness } from "@/domain/company/company";
 import Link from "next/link";
+import { AuditHistory } from "@/components/audit-history";
 import { LogoUploader } from "@/components/logo-uploader";
 import { brandPath, companiesPath, newBrandPath } from "@/lib/company-paths";
 import { listBrands } from "@/server/brands/queries";
@@ -113,6 +114,7 @@ export default async function CompanyPage({ params, searchParams }: Props) {
         </p>
         <CompanyActiveForm id={company.id} isActive={company.isActive} />
       </Card>
+      <AuditHistory filter={{ companyId: company.id }} />
     </main>
   );
 }

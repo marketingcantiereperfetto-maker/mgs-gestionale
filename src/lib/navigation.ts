@@ -384,6 +384,14 @@ export const navigation: NavSection[] = [
           emptyState: `Nessuna aliquota né unità di misura inserita. ${catalogLater}`,
         },
         {
+          label: "Registro delle modifiche",
+          href: "/impostazioni/registro-delle-modifiche",
+          title: "Registro delle modifiche",
+          subtitle: "Chi ha cambiato cosa, e quando.",
+          emptyState: "Nessuna modifica registrata.",
+          requires: "audit_log.view",
+        },
+        {
           label: "Importazioni",
           href: "/impostazioni/importazioni",
           title: "Importazioni",
@@ -416,6 +424,15 @@ export const searchPage: NavPage = {
     "Non c'è ancora nulla da cercare. La ricerca funzionerà quando ci saranno clienti, preventivi e articoli.",
 };
 
+// Il proprio profilo: dal menu utente, per tutti.
+export const profilePage: NavPage = {
+  label: "Il mio profilo",
+  href: "/profilo",
+  title: "Il mio profilo",
+  subtitle: "Il nome con cui compari nel gestionale e nel registro delle modifiche.",
+  emptyState: "",
+};
+
 type Allowed = (action: Action) => boolean;
 
 function isAllowed(allowed: Allowed, action: Action | undefined): boolean {
@@ -440,6 +457,7 @@ export type PageAccess = { page: NavPage; requires: Action[] };
 // La pagina che corrisponde a un indirizzo e i permessi che servono per aprirla.
 export function findPage(href: string): PageAccess | null {
   if (href === searchPage.href) return { page: searchPage, requires: [] };
+  if (href === profilePage.href) return { page: profilePage, requires: [] };
   for (const section of navigation) {
     const pages = section.page ? [section.page] : (section.groups ?? []).flat();
     const page = pages.find((candidate) => candidate.href === href);
