@@ -55,6 +55,7 @@ describe("can: casi di blocco", () => {
     "audit_log.view",
     "users.manage",
     "settings.manage",
+    "catalog.manage",
   ];
 
   it("nessun permesso senza utente collegato", () => {
@@ -79,5 +80,21 @@ describe("can: casi di blocco", () => {
     }
     expect(can(user("owner"), "users.manage")).toBe(true);
     expect(can(user("owner"), "settings.manage")).toBe(true);
+  });
+
+  it("il catalogo lo gestiscono l'amministrazione cataloghi e il titolare, separato da utenti e impostazioni", () => {
+    expect(can(user("catalog_admin"), "catalog.manage")).toBe(true);
+    expect(can(user("owner"), "catalog.manage")).toBe(true);
+    for (const role of ["sales_manager", "sales_consultant", "finance_admin"] as const) {
+      expect(can(user(role), "catalog.manage")).toBe(false);
+    }
+    expect(can(user("catalog_admin"), "users.manage")).toBe(false);
+    expect(can(user("catalog_admin"), "settings.manage")).toBe(false);
+  });
+
+  it("l'amministrazione cataloghi gestisce il catalogo solo delle proprie società", () => {
+    const cataloghi = user("catalog_admin");
+    expect(can(cataloghi, "catalog.manage", { companyId: companyA })).toBe(true);
+    expect(can(cataloghi, "catalog.manage", { companyId: companyB })).toBe(false);
   });
 });

@@ -3,7 +3,12 @@ import type { Database } from "@/lib/supabase/database.types";
 export type UserRole = Database["public"]["Enums"]["user_role"];
 
 export type Action =
-  "costs.view" | "margins.view" | "audit_log.view" | "users.manage" | "settings.manage";
+  | "costs.view"
+  | "margins.view"
+  | "audit_log.view"
+  | "users.manage"
+  | "settings.manage"
+  | "catalog.manage";
 
 export type AppUser = {
   id: string;
@@ -24,12 +29,20 @@ export const roleLabels: Record<UserRole, string> = {
   finance_admin: "Amministrazione economica",
 };
 
-// Facoltà dei 5 modelli di ruolo (cap. 20.1). Costi e margini solo ai ruoli autorizzati
-// (principio 7): l'amministrazione cataloghi vede i costi perché li inserisce.
+// Facoltà dei 5 modelli di ruolo (cap. 20.1, decisioni del 3 novembre 2026). Costi e margini
+// solo ai ruoli autorizzati (principio 7): l'amministrazione cataloghi vede i costi perché li
+// inserisce. Il catalogo (materiali, lavorazioni, Wizard) è separato da utenti e impostazioni.
 const roleActions: Record<UserRole, readonly Action[]> = {
-  owner: ["costs.view", "margins.view", "audit_log.view", "users.manage", "settings.manage"],
+  owner: [
+    "costs.view",
+    "margins.view",
+    "audit_log.view",
+    "users.manage",
+    "settings.manage",
+    "catalog.manage",
+  ],
   finance_admin: ["costs.view", "margins.view", "audit_log.view"],
-  catalog_admin: ["costs.view"],
+  catalog_admin: ["costs.view", "catalog.manage"],
   sales_manager: [],
   sales_consultant: [],
 };
