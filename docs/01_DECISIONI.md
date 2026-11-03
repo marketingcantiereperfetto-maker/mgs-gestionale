@@ -43,7 +43,9 @@ Aggiornare a ogni traguardo. Una decisione cambiata non si cancella: si aggiunge
 - **Gestione del catalogo** (materiali, lavorazioni, Wizard): facoltà distinta, dell'amministrazione cataloghi; separata da utenti e impostazioni. Il titolare la ha anche lui, come primo amministratore (§20.2).
 - **Società:** il titolare agisce su tutte le società; gli altri ruoli solo su quelle a cui sono collegati.
 - **Password:** almeno 12 caratteri.
-- **Tecnica:** tabella società minima (solo ragione sociale) creata ora per collegare gli utenti; i dati completi arrivano con le Impostazioni (backlog 4). Primo titolare creato con `npm run utenti:crea-titolare`, che senza `--conferma` non fa nulla.
+- **Tecnica:** tabella società minima (solo ragione sociale) creata ora per collegare gli utenti; i dati completi arrivano con le Impostazioni (backlog 4).
+- **Primo titolare senza email:** Supabase non permette di cambiare i modelli delle email senza un SMTP aziendale. Il comando `npm run utenti:crea-titolare` (con `--conferma`) crea l'invito e stampa nel Terminale il link a `/auth/conferma`, valido 1 ora; il link non va mai mostrato in chat.
+- **Conferma dell'invito:** aprire il link non verifica nulla; il codice si usa solo dopo il clic su «Attiva l'account» (protegge dai programmi che aprono i link da soli).
 
 ## Aperte (da decidere prima della funzione relativa)
 - Arrotondamenti: prima del motore dei prezzi.

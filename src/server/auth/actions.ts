@@ -2,7 +2,7 @@
 
 import { redirect } from "next/navigation";
 import { minPasswordLength } from "@/lib/auth/password";
-import { loginPath } from "@/lib/auth/routes";
+import { loginPath, safeNextPath, setPasswordPath } from "@/lib/auth/routes";
 import { readSupabaseEnv } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/server/supabase";
 
@@ -62,4 +62,18 @@ export async function signOut(): Promise<void> {
     await supabase.auth.signOut();
   }
   redirect(loginPath);
+}
+
+// Il codice si verifica solo qui, dopo il clic sul pulsante: aprire il link non lo consuma
+// (alcuni programmi di posta e di anteprima aprono i link da soli).
+export async function confirmInvite(formData: FormData): Promise<void> {
+  const tokenHash = field(formData, "token_hash");
+  const next = safeNextPath(field(formData, "next"), setPasswordPath);
+
+  if (readSupabaseEnv() && tokenHash) {
+    const supabase = await createSupabaseServerClient();
+    const { error } = await supabase.auth.verifyOtp({ type: "invite", token_hash: tokenHash });
+    if (!error) redirect(next);
+  }
+  redirect(`${loginPath}?errore=link-non-valido`);
 }

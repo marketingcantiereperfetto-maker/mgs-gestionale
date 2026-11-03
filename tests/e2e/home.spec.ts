@@ -15,12 +15,25 @@ test("la pagina per la password non si apre senza accesso", async ({ page }) => 
   await expect(page).toHaveURL(/\/accedi$/);
 });
 
-test("un link di invito non valido rimanda all'accesso con un messaggio chiaro", async ({
+test("aprire il link di invito non verifica nulla: serve il clic sul pulsante", async ({
   page,
 }) => {
-  await page.goto("/auth/conferma?token_hash=non-valido&type=invite");
+  const link = "/auth/conferma?token_hash=non-valido&type=invite&next=/imposta-password";
+  await page.goto(link);
+
+  // Nessun reindirizzamento all'apertura: il codice non è stato usato.
+  await expect(page).toHaveURL(link);
+  await expect(page.getByRole("heading", { name: "Attiva l'account" })).toBeVisible();
+
+  await page.getByRole("button", { name: "Attiva l'account" }).click();
   await expect(page).toHaveURL(/\/accedi\?errore=link-non-valido$/);
   await expect(
     page.getByRole("alert").filter({ hasText: "Il link non è valido o è scaduto" }),
   ).toBeVisible();
+});
+
+test("un link di invito incompleto mostra subito un messaggio chiaro", async ({ page }) => {
+  await page.goto("/auth/conferma?type=invite");
+  await expect(page.getByRole("button", { name: "Attiva l'account" })).toHaveCount(0);
+  await expect(page.getByRole("alert").filter({ hasText: "Il link non è valido" })).toBeVisible();
 });

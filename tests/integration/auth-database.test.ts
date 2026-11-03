@@ -27,7 +27,10 @@ describe.skipIf(!env)("database di prova: accesso solo su invito", () => {
       password: "Prova-Registrazione-2026!",
     });
     expect(data.user).toBeNull();
-    expect(error?.code).toBe("signup_disabled");
+    expect(
+      error?.code,
+      "Se il codice è un limite di tentativi (rate limit), riprova tra qualche minuto",
+    ).toBe("signup_disabled");
   });
 
   it("chi non ha fatto l'accesso non legge profili, società e registro", async () => {

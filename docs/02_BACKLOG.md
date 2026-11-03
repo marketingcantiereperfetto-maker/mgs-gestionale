@@ -23,7 +23,7 @@ Ogni lavoro ha un criterio per dire «è fatto». Si lavora dall'alto verso il b
 10. Motore dei prezzi (modulo puro) con i **casi reali come test**.
 11. Wizard: blocchi, gradi di libertà, regole, simulatore, bozza/prova/pubblicato, versioni.
 12. Preventivo: testata, righe, omaggi e upsell, totale e ripartizione, soglie e autorizzazioni, stati, PDF.
-13. Pilota con 2-3 consulenti in parallelo al sistema attuale. *Prima di iniziare:* passaggio ai piani a pagamento di Vercel e Supabase e creazione del progetto Supabase di produzione.
+13. Pilota con 2-3 consulenti in parallelo al sistema attuale. *Prima di iniziare:* passaggio ai piani a pagamento di Vercel e Supabase, creazione del progetto Supabase di produzione, **servizio email SMTP aziendale** collegato a Supabase e **modelli delle email in italiano** (invito, recupero password) con il link a `/auth/conferma`.
 
 ## Fasi successive (solo titoli)
 Ordini e pagamenti a rate, incassi automatici · Controllo di gestione (conto economico, costi indipendenti, previsioni, KPI) · Kit misti e abbigliamento · Manuali e chat.
