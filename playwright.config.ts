@@ -2,6 +2,13 @@ import { defineConfig, devices } from "@playwright/test";
 
 const port = 3100;
 
+// Le variabili di .env.local servono ai test con utenti temporanei; i valori non si stampano.
+try {
+  process.loadEnvFile(".env.local");
+} catch {
+  // Senza .env.local (per esempio su GitHub) quei test vengono saltati.
+}
+
 export default defineConfig({
   testDir: "tests/e2e",
   forbidOnly: !!process.env.CI,
