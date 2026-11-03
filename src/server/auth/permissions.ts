@@ -11,7 +11,8 @@ export type Action =
   | "catalog.manage"
   | "management_control.view"
   | "approvals.view"
-  | "consultants.view";
+  | "consultants.view"
+  | "companies.manage";
 
 export type AppUser = {
   id: string;
@@ -36,7 +37,7 @@ export const roleLabels: Record<UserRole, string> = {
 // solo ai ruoli autorizzati (principio 7): l'amministrazione cataloghi vede i costi perché li
 // inserisce. Il catalogo (materiali, lavorazioni, Wizard) è separato da utenti e impostazioni.
 // Controllo di gestione, richieste di autorizzazione e consulenti: proposta provvisoria del
-// 3 novembre 2026, da rivedere quando arrivano i dati.
+// 3 novembre 2026, da rivedere quando arrivano i dati. Società, brand e conti: solo il titolare.
 const roleActions: Record<UserRole, readonly Action[]> = {
   owner: [
     "costs.view",
@@ -48,6 +49,7 @@ const roleActions: Record<UserRole, readonly Action[]> = {
     "management_control.view",
     "approvals.view",
     "consultants.view",
+    "companies.manage",
   ],
   finance_admin: ["costs.view", "margins.view", "audit_log.view", "management_control.view"],
   catalog_admin: ["costs.view", "catalog.manage"],

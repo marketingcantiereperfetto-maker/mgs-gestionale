@@ -348,8 +348,8 @@ export const navigation: NavSection[] = [
           href: "/impostazioni/societa-e-brand",
           title: "Società e brand",
           subtitle: "Società del Gruppo, conti bancari e brand.",
-          emptyState:
-            "Nessuna società inserita. La configurazione di società e brand è il prossimo passo della Fase 1.",
+          emptyState: "Nessuna società inserita.",
+          requires: "companies.manage",
         },
         {
           label: "Reparti e macchinari",

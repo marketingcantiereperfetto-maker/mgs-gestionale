@@ -2,18 +2,11 @@ import { redirect } from "next/navigation";
 import { AuthCard } from "@/components/auth-card";
 import { TopBar } from "@/components/top-bar";
 import { loginPath, setPasswordPath } from "@/lib/auth/routes";
+import { initials } from "@/lib/initials";
 import { visibleNavigation } from "@/lib/navigation";
 import { signOut } from "@/server/auth/actions";
 import { getSession } from "@/server/auth/current-user";
 import { can, roleLabels } from "@/server/auth/permissions";
-
-function initials(name: string): string {
-  const words = name.split(/[\s@._-]+/).filter(Boolean);
-  return words
-    .slice(0, 2)
-    .map((word) => word[0]!.toUpperCase())
-    .join("");
-}
 
 export default async function AppLayout({ children }: { children: React.ReactNode }) {
   const session = await getSession();
@@ -43,7 +36,11 @@ export default async function AppLayout({ children }: { children: React.ReactNod
     <>
       <TopBar
         sections={sections}
-        user={{ name, initials: initials(name), roleLabel: roleLabels[user.role] }}
+        user={{
+          name,
+          initials: initials(user.fullName, user.email),
+          roleLabel: roleLabels[user.role],
+        }}
       />
       <div className="pt-[46px]">{children}</div>
     </>

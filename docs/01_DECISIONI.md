@@ -62,6 +62,19 @@ Aggiornare a ogni traguardo. Una decisione cambiata non si cancella: si aggiunge
 - **Formati:** gli importi si formattano da testo decimale esatto, senza arrotondare (gli arrotondamenti restano nel motore dei prezzi); punto delle migliaia sempre presente (1.234,50 €).
 - **Contrasto:** il blu delle azioni come testo si usa solo su schede bianche, non sullo sfondo grigio della pagina (sotto il 4,5:1).
 
+## Decise il 3 novembre 2026 (società e brand, giorno 5)
+- **Gestione:** solo il titolare crea e modifica società, brand e conti (permesso `companies.manage`), controllato sul server e dalle regole del database.
+- **Nessuna cancellazione:** società, brand e conti si disattivano e riattivano (campo «attiva»). Gli elenchi nascondono le voci disattivate; ogni cambio finisce nel registro. Così si conserva l'attribuzione storica (§3).
+- **Società:** per crearla basta la ragione sociale. Gli altri campi sono facoltativi, ma se compilati devono essere validi. Sede legale: via e numero, CAP, comune, provincia, paese; niente PEC né codice SDI (il documento non li chiede). Il paese non ha un valore predefinito: «Italia» si sceglie con un clic e si salva solo così.
+- **Controlli:** partita IVA di 11 cifre con cifra di controllo; codice fiscale di 16 caratteri (persone, con carattere di controllo) oppure di 11 cifre (società, con cifra di controllo); IBAN di qualunque paese con cifre di controllo; email nel formato corretto.
+- **Pronta per emettere preventivi:** servono partita IVA, codice fiscale, sede legale completa ed email; l'IBAN serve se si usa il bonifico (segnalato finché i metodi di pagamento non esistono).
+- **Conti bancari:** più conti per società, uno solo predefinito (quello del PDF). Il primo conto attivo diventa predefinito da solo. Il conto predefinito non si disattiva finché ce ne sono altri attivi: prima se ne sceglie un altro. Se si disattiva l'unico conto, la società resta senza predefinito; un conto riattivato diventa predefinito se non ce n'è un altro.
+- **Brand e società:** collegamento molti-a-molti. Il logo è del brand; la società può avere un logo di riserva.
+- **Loghi:** archivio file di Supabase privato, letto con indirizzi firmati a breve scadenza. Solo PNG, JPEG o WebP fino a 1 MB: il tipo si controlla dal contenuto vero del file, e gli stessi limiti valgono anche sull'archivio. Carica solo il titolare.
+- **Registro delle modifiche:** pagina «Impostazioni → Registro delle modifiche», solo per il titolare (per ora l'amministrazione economica non ha la pagina, pur potendo leggere il registro).
+- **Test che cancellano dati:** usano la chiave di amministrazione solo sul progetto Supabase di prova (riferimento `rozukexrurbadsiznmby`) e si rifiutano di partire su qualunque altro progetto. Mai su produzione. Creano solo dati inventati e li cancellano alla fine; le righe del registro su quei dati restano.
+- **Avatar:** iniziali del nome del profilo; se manca, le prime due lettere dell'email.
+
 ## Aperte (da decidere prima della funzione relativa)
 - Arrotondamenti: prima del motore dei prezzi.
 - Numerazione preventivi e ordini, «Duplica per», taglie come righe o note: prima dei Wizard.
