@@ -1,5 +1,5 @@
 // Cancella dal database DI PROVA società, brand e clienti di dati inventati, con conti,
-// collegamenti e loghi. Il registro delle modifiche non si tocca. Si rifiuta di girare su altri progetti.
+// collegamenti, loghi, referenti e indirizzi di consegna dei clienti. Il registro delle modifiche non si tocca. Si rifiuta di girare su altri progetti.
 // Uso: npm run prova:cancella -- --societa "NOME ESATTO" --brand "NOME ESATTO"
 //        --cliente "NOME ESATTO" [--conferma] (ognuno si può ripetere). Senza --conferma mostra solo cosa cancellerebbe.
 import { createClient } from "@supabase/supabase-js";
@@ -133,6 +133,29 @@ if (companyIds.length > 0) {
   }
 }
 
+// Referenti e indirizzi dei clienti: si mostrano solo i conteggi, mai i dati personali.
+const customerIds = customers.data.map((customer) => customer.id);
+const noIds = ["00000000-0000-0000-0000-000000000000"];
+const [customerContacts, customerAddresses] = await Promise.all([
+  supabase
+    .from("customer_contacts")
+    .select("id, customer_id")
+    .in("customer_id", customerIds.length ? customerIds : noIds),
+  supabase
+    .from("customer_delivery_addresses")
+    .select("id, customer_id")
+    .in("customer_id", customerIds.length ? customerIds : noIds),
+]);
+if (customerContacts.error || customerAddresses.error) fail("referenti o indirizzi non letti.");
+for (const customer of customers.data) {
+  const contacts = customerContacts.data.filter((row) => row.customer_id === customer.id).length;
+  const addresses = customerAddresses.data.filter((row) => row.customer_id === customer.id).length;
+  console.log(
+    `Cliente ${customer.id} «${customer.name}» (attivo: ${customer.is_active ? "sì" : "no"}): ` +
+      `${contacts} referenti, ${addresses} indirizzi di consegna`,
+  );
+}
+
 if (!values.conferma) {
   console.log("Prova senza effetti: aggiungi --conferma per cancellare quanto elencato.");
   process.exit(0);
@@ -161,6 +184,18 @@ const deletedBrands = brandIds.length
   ? await supabase.from("brands").delete().in("id", brandIds).select("id")
   : { data: [], error: null };
 if (deletedBrands.error) fail(`brand non cancellati (${deletedBrands.error.message}).`);
+const deletedContacts = customerIds.length
+  ? await supabase.from("customer_contacts").delete().in("customer_id", customerIds).select("id")
+  : { data: [], error: null };
+if (deletedContacts.error) fail(`referenti non cancellati (${deletedContacts.error.message}).`);
+const deletedAddresses = customerIds.length
+  ? await supabase
+      .from("customer_delivery_addresses")
+      .delete()
+      .in("customer_id", customerIds)
+      .select("id")
+  : { data: [], error: null };
+if (deletedAddresses.error) fail(`indirizzi non cancellati (${deletedAddresses.error.message}).`);
 const deletedCustomers = customers.data.length
   ? await supabase
       .from("customers")
@@ -181,6 +216,7 @@ console.log(
   `Cancellati: ${deletedCompanies.data.length} società, ${accounts.data.length} conti, ` +
     `${deletedBrands.data.length} brand, ` +
     `${removedLinks.data.length + removedLinksByCompany.data.length} collegamenti, ` +
-    `${files.length} file di logo, ${deletedCustomers.data.length} clienti. ` +
+    `${files.length} file di logo, ${deletedCustomers.data.length} clienti, ` +
+    `${deletedContacts.data.length} referenti, ${deletedAddresses.data.length} indirizzi. ` +
     "Registro delle modifiche intatto.",
 );

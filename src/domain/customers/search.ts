@@ -1,21 +1,25 @@
-import { normalizeCode } from "@/domain/company/identifiers";
+// Ricerca nell'elenco clienti per nome, partita IVA, codice fiscale, PEC ed email dei referenti
+// attivi (decisioni del 4 novembre 2026). La ricerca vera la fa il database
+// (`search_customers`), con i suoi limiti: testo da 3 a 100 caratteri, 20 ricerche al minuto e al
+// massimo 50 risultati (con l'avviso se ce ne sono altri).
+export const minSearchLength = 3;
+export const maxSearchLength = 100;
 
-// Ricerca nell'elenco clienti per nome, partita IVA, codice fiscale e PEC (precisazione del
-// 4 novembre 2026). Il testo cercato diventa un filtro «or» di PostgREST: si tolgono i
-// caratteri che hanno un significato nel filtro, così non si possono aggiungere condizioni.
-export const maxSearchLength = 80;
+export type PreparedSearch =
+  { kind: "none" } | { kind: "short" } | { kind: "long" } | { kind: "search"; term: string };
 
-export function customerSearchFilter(raw: string | undefined): string | null {
-  const term = (raw ?? "")
-    .replace(/[,()*%"\\]/g, " ")
-    .trim()
-    .replace(/\s+/g, " ")
-    .slice(0, maxSearchLength);
-  if (term.length < 2) return null;
-  const code = normalizeCode(term);
-  const parts = [`name.ilike.*${term}*`, `pec.ilike.*${term}*`];
-  if (/^[A-Z0-9]+$/.test(code)) {
-    parts.push(`vat_number.ilike.*${code}*`, `tax_code.ilike.*${code}*`);
-  }
-  return parts.join(",");
+export function prepareCustomerSearch(raw: string | undefined): PreparedSearch {
+  const term = (raw ?? "").trim().replace(/\s+/g, " ");
+  if (term === "") return { kind: "none" };
+  if (term.length < minSearchLength) return { kind: "short" };
+  if (term.length > maxSearchLength) return { kind: "long" };
+  return { kind: "search", term };
 }
+
+export const searchMessages = {
+  short: `Scrivi almeno ${minSearchLength} caratteri per cercare.`,
+  long: `Il testo da cercare può avere al massimo ${maxSearchLength} caratteri.`,
+  busy: "Troppe ricerche ravvicinate, riprova tra un minuto.",
+  failed: "Ricerca non riuscita. Riprova.",
+  more: "Ci sono altri risultati: affina la ricerca.",
+} as const;

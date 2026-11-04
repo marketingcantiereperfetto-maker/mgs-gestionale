@@ -1,5 +1,5 @@
 import type { CustomerData, SubjectType, VatRegime } from "@/domain/customers/customer";
-import { customerSearchFilter } from "@/domain/customers/search";
+import { searchMessages } from "@/domain/customers/search";
 import type { Database } from "@/lib/supabase/database.types";
 import { createSupabaseServerClient } from "@/server/supabase";
 
@@ -72,14 +72,44 @@ export function toCustomerColumns(customer: CustomerData) {
 
 // L'elenco legge le righe intere per calcolare la completezza, ma mostra solo nome, tipo,
 // comune e completezza (decisione del 4 novembre 2026).
-export async function listCustomers(search?: string): Promise<Customer[]> {
+export async function listCustomers(): Promise<Customer[]> {
   const supabase = await createSupabaseServerClient();
-  let query = supabase.from("customers").select("*").order("name");
-  const filter = customerSearchFilter(search);
-  if (filter) query = query.or(filter);
-  const { data, error } = await query;
+  const { data, error } = await supabase.from("customers").select("*").order("name");
   if (error) throw new Error("Clienti non letti");
   return data.map(toCustomer);
+}
+
+export type CustomerSearch = { customers: Customer[]; error: string | null; hasMore: boolean };
+
+// Ricerca dal database, anche per email dei referenti attivi. La funzione restituisce solo id,
+// nome, tipo, comune e stato, al massimo 50 risultati (con «has_more» se ce ne sono altri). Le
+// righe dei soli clienti trovati si leggono qui sul server per calcolare la completezza, come
+// fa l'elenco senza ricerca; alla pagina arrivano solo nome, tipo, comune e completezza.
+// Testo già controllato (3–100 caratteri) dal chiamante.
+export async function searchCustomers(term: string): Promise<CustomerSearch> {
+  const supabase = await createSupabaseServerClient();
+  const { data, error } = await supabase.rpc("search_customers", { search_text: term });
+  if (error) {
+    const message = error.code === "P0001" ? searchMessages.busy : searchMessages.failed;
+    return { customers: [], error: message, hasMore: false };
+  }
+  const found = data ?? [];
+  if (found.length === 0) return { customers: [], error: null, hasMore: false };
+  const rows = await supabase
+    .from("customers")
+    .select("*")
+    .in(
+      "id",
+      found.map((row) => row.id),
+    )
+    .order("name")
+    .order("id");
+  if (rows.error) return { customers: [], error: searchMessages.failed, hasMore: false };
+  return {
+    customers: rows.data.map(toCustomer),
+    error: null,
+    hasMore: found.some((row) => row.has_more),
+  };
 }
 
 export async function getCustomer(id: string): Promise<Customer | null> {

@@ -69,7 +69,10 @@ function combinedCondition(filters: AuditFilters): string | null {
     parts.push(`and(table_name.in.(brands,company_brands),record_id.eq.${id})`);
   }
   if (filters.customerId) {
-    parts.push(`and(table_name.eq.customers,record_id.eq.${filters.customerId})`);
+    const id = filters.customerId;
+    parts.push(
+      `or(and(table_name.eq.customers,record_id.eq.${id}),and(table_name.in.(customer_contacts,customer_delivery_addresses),or(new_data->>customer_id.eq.${id},old_data->>customer_id.eq.${id})))`,
+    );
   }
   if (filters.after) {
     const at = `"${filters.after.at}"`;
@@ -84,6 +87,7 @@ async function loadNames(entries: AuditEntry[]): Promise<AuditNames> {
   const people = new Set<string>();
   const companies = new Set<string>();
   const brands = new Set<string>();
+  const customers = new Set<string>();
   const snapshotCompanies = new Map<string, string>();
   const snapshotBrands = new Map<string, string>();
 
@@ -93,6 +97,7 @@ async function loadNames(entries: AuditEntry[]): Promise<AuditNames> {
     if (typeof data.user_id === "string") people.add(data.user_id);
     if (typeof data.company_id === "string") companies.add(data.company_id);
     if (typeof data.brand_id === "string") brands.add(data.brand_id);
+    if (typeof data.customer_id === "string") customers.add(data.customer_id);
     if (entry.table === "companies" && entry.recordId && typeof data.legal_name === "string") {
       snapshotCompanies.set(entry.recordId, data.legal_name);
     }
@@ -101,7 +106,7 @@ async function loadNames(entries: AuditEntry[]): Promise<AuditNames> {
     }
   }
 
-  const [labels, companyRows, brandRows] = await Promise.all([
+  const [labels, companyRows, brandRows, customerRows] = await Promise.all([
     people.size
       ? supabase.rpc("audit_actor_labels", { actor_ids: [...people] })
       : { data: [], error: null },
@@ -117,6 +122,12 @@ async function loadNames(entries: AuditEntry[]): Promise<AuditNames> {
           .select("id, name")
           .in("id", [...brands])
       : { data: [], error: null },
+    customers.size
+      ? supabase
+          .from("customers")
+          .select("id, name")
+          .in("id", [...customers])
+      : { data: [], error: null },
   ]);
   if (labels.error) throw new Error("Nomi del registro non letti");
 
@@ -130,6 +141,7 @@ async function loadNames(entries: AuditEntry[]): Promise<AuditNames> {
       ...snapshotBrands,
       ...(brandRows.data ?? []).map((row) => [row.id, row.name] as const),
     ]),
+    customers: new Map((customerRows.data ?? []).map((row) => [row.id, row.name] as const)),
   };
 }
 

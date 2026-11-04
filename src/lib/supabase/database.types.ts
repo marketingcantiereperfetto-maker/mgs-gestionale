@@ -205,6 +205,112 @@ export type Database = {
           },
         ];
       };
+      customer_contacts: {
+        Row: {
+          created_at: string;
+          creation_key: string | null;
+          customer_id: string;
+          email: string | null;
+          id: string;
+          is_active: boolean;
+          is_primary: boolean;
+          name: string;
+          phone: string | null;
+          role: string | null;
+          updated_at: string;
+        };
+        Insert: {
+          created_at?: string;
+          creation_key?: string | null;
+          customer_id: string;
+          email?: string | null;
+          id?: string;
+          is_active?: boolean;
+          is_primary?: boolean;
+          name: string;
+          phone?: string | null;
+          role?: string | null;
+          updated_at?: string;
+        };
+        Update: {
+          created_at?: string;
+          creation_key?: string | null;
+          customer_id?: string;
+          email?: string | null;
+          id?: string;
+          is_active?: boolean;
+          is_primary?: boolean;
+          name?: string;
+          phone?: string | null;
+          role?: string | null;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "customer_contacts_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
+      customer_delivery_addresses: {
+        Row: {
+          city: string;
+          country: string;
+          created_at: string;
+          creation_key: string | null;
+          customer_id: string;
+          description: string | null;
+          id: string;
+          is_active: boolean;
+          is_default: boolean;
+          postal_code: string | null;
+          province: string | null;
+          street: string;
+          updated_at: string;
+        };
+        Insert: {
+          city: string;
+          country: string;
+          created_at?: string;
+          creation_key?: string | null;
+          customer_id: string;
+          description?: string | null;
+          id?: string;
+          is_active?: boolean;
+          is_default?: boolean;
+          postal_code?: string | null;
+          province?: string | null;
+          street: string;
+          updated_at?: string;
+        };
+        Update: {
+          city?: string;
+          country?: string;
+          created_at?: string;
+          creation_key?: string | null;
+          customer_id?: string;
+          description?: string | null;
+          id?: string;
+          is_active?: boolean;
+          is_default?: boolean;
+          postal_code?: string | null;
+          province?: string | null;
+          street?: string;
+          updated_at?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "customer_delivery_addresses_customer_id_fkey";
+            columns: ["customer_id"];
+            isOneToOne: false;
+            referencedRelation: "customers";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       customers: {
         Row: {
           address_city: string | null;
@@ -388,12 +494,39 @@ export type Database = {
       };
       health_check: { Args: never; Returns: Json };
       mark_password_set: { Args: never; Returns: undefined };
+      search_customers: {
+        Args: { search_text: string };
+        Returns: {
+          city: string;
+          has_more: boolean;
+          id: string;
+          is_active: boolean;
+          name: string;
+          subject_type: Database["public"]["Enums"]["customer_subject_type"];
+        }[];
+      };
       set_bank_account_active: {
         Args: { account_id: string; active: boolean };
         Returns: undefined;
       };
+      set_customer_address_active: {
+        Args: { active: boolean; address_id: string };
+        Returns: undefined;
+      };
+      set_customer_contact_active: {
+        Args: { active: boolean; contact_id: string };
+        Returns: undefined;
+      };
       set_default_bank_account: {
         Args: { account_id: string };
+        Returns: undefined;
+      };
+      set_default_customer_address: {
+        Args: { address_id: string };
+        Returns: undefined;
+      };
+      set_primary_customer_contact: {
+        Args: { contact_id: string };
         Returns: undefined;
       };
       similar_customers: {

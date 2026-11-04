@@ -9,6 +9,8 @@ import { can } from "@/server/auth/permissions";
 import { requirePage } from "@/server/auth/page-access";
 import { listCompanies } from "@/server/companies/queries";
 import { getCustomer, getCustomerAuthors } from "@/server/customers/queries";
+import { listCustomerAddresses, listCustomerContacts } from "@/server/customers/details";
+import { CustomerAddresses, CustomerContacts } from "@/components/customers/customer-details";
 import { formatDateTime } from "@/lib/format";
 import { CustomerActiveForm } from "./customer-active-form";
 import { CustomerForm } from "./customer-form";
@@ -22,7 +24,6 @@ const later = [
   "Codice cliente: arriverà con la numerazione di preventivi e ordini.",
   "Condizione di pagamento predefinita, banca e IBAN del cliente: arriveranno con i pagamenti.",
   "Consulente assegnata e rapporto con ciascuna società: arriveranno più avanti.",
-  "Referenti e indirizzi di consegna: arriveranno nel prossimo passo.",
 ];
 
 export default async function CustomerPage({ params, searchParams }: Props) {
@@ -34,7 +35,12 @@ export default async function CustomerPage({ params, searchParams }: Props) {
   if (!customer) notFound();
 
   const completeness = customerCompleteness(customer);
-  const authors = await getCustomerAuthors(customer);
+  const [authors, contacts, addresses] = await Promise.all([
+    getCustomerAuthors(customer),
+    listCustomerContacts(customer.id),
+    listCustomerAddresses(customer.id),
+  ]);
+  const canDeactivate = can(user, "customers.deactivate");
   const canEditGroup = can(user, "customers.group_company");
   // Le società servono solo a chi può indicare la società del gruppo, o per mostrarne il nome.
   const companies =
@@ -73,6 +79,22 @@ export default async function CustomerPage({ params, searchParams }: Props) {
         <CustomerForm customer={customer} companies={companies} canEditGroup={canEditGroup} />
       </Card>
 
+      <Card title="Referenti">
+        <CustomerContacts
+          customerId={customer.id}
+          contacts={contacts}
+          canDeactivate={canDeactivate}
+        />
+      </Card>
+
+      <Card title="Indirizzi di consegna">
+        <CustomerAddresses
+          customerId={customer.id}
+          addresses={addresses}
+          canDeactivate={canDeactivate}
+        />
+      </Card>
+
       <Card title="Arriverà">
         <ul className="list-disc space-y-1 pl-5 text-ink-muted">
           {later.map((item) => (
@@ -81,7 +103,7 @@ export default async function CustomerPage({ params, searchParams }: Props) {
         </ul>
       </Card>
 
-      {can(user, "customers.deactivate") ? (
+      {canDeactivate ? (
         <Card title={customer.isActive ? "Disattiva il cliente" : "Riattiva il cliente"}>
           <p className="mb-3 text-ink-muted">
             {customer.isActive
