@@ -112,22 +112,39 @@ function changed(entry: AuditEntry, field: string): boolean {
   return (entry.oldData?.[field] ?? null) !== (entry.newData?.[field] ?? null);
 }
 
+// Clienti: le righe scritte dal registro ridotto hanno «changed_fields» (solo i nomi dei campi);
+// le righe più vecchie, dei soli clienti di prova, avevano la riga intera.
+function customerChanges(entry: AuditEntry): AuditChange[] {
+  const withValue = ["name", "subject_type"]
+    .filter((field) => changed(entry, field))
+    .map((field) => ({
+      label: customerFieldLabels[field]!,
+      before: show(field, entry.oldData?.[field]),
+      after: show(field, entry.newData?.[field]),
+    }));
+  const listed = entry.newData?.changed_fields;
+  const names = Array.isArray(listed)
+    ? listed.filter((field): field is string => typeof field === "string")
+    : Object.keys(customerFieldLabels).filter(
+        (field) => field in (entry.newData ?? {}) && changed(entry, field),
+      );
+  const withoutValue = names
+    .filter((field) => !customerFieldsWithValue.has(field) && field in customerFieldLabels)
+    .map((field) => ({ label: customerFieldLabels[field]! }));
+  return [...withValue, ...withoutValue];
+}
+
 // Solo i campi con un nome in italiano: quelli tecnici non compaiono mai.
 function visibleChanges(entry: AuditEntry): AuditChange[] {
   if (entry.action !== "update") return [];
-  const customers = entry.table === "customers";
-  const labels = customers ? customerFieldLabels : fieldLabels;
-  return Object.keys(labels)
+  if (entry.table === "customers") return customerChanges(entry);
+  return Object.keys(fieldLabels)
     .filter((field) => field in (entry.newData ?? {}) && changed(entry, field))
-    .map((field) => {
-      const label = labels[field]!;
-      if (customers && !customerFieldsWithValue.has(field)) return { label };
-      return {
-        label,
-        before: show(field, entry.oldData?.[field]),
-        after: show(field, entry.newData?.[field]),
-      };
-    });
+    .map((field) => ({
+      label: fieldLabels[field]!,
+      before: show(field, entry.oldData?.[field]),
+      after: show(field, entry.newData?.[field]),
+    }));
 }
 
 function value(entry: AuditEntry, field: string): unknown {
