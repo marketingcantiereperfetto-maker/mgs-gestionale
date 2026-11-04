@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
+import { IncompleteCustomersCard } from "@/components/customers/incomplete-customers-card";
 import { SetupGuideCard } from "@/components/setup-guide";
 import { Card, Notice, PageHeader } from "@/components/ui";
 import { dashboardSetup } from "@/domain/setup/steps";
 import { can } from "@/server/auth/permissions";
 import { requirePage } from "@/server/auth/page-access";
 import { getDatabaseStatus, type DatabaseStatus } from "@/server/database-status";
+import { loadIncompleteSummary } from "@/server/customers/queries";
 import { loadSetupFacts } from "@/server/setup/facts";
 import { createSupabaseServerClient } from "@/server/supabase";
 
@@ -22,11 +24,13 @@ export default async function DashboardPage({ searchParams }: Props) {
   const { page, user } = await requirePage("/");
   const { accesso } = await searchParams;
   // Il percorso lo calcola solo chi configura società e brand (il titolare).
-  const [setup, databaseStatus] = await Promise.all([
+  // I clienti da completare solo per chi vede i clienti: per gli altri non si legge nulla.
+  const [setup, databaseStatus, incomplete] = await Promise.all([
     dashboardSetup(can(user, "companies.manage"), async () =>
       loadSetupFacts(await createSupabaseServerClient()),
     ),
     getDatabaseStatus(),
+    can(user, "customers.view") ? loadIncompleteSummary() : null,
   ]);
 
   return (
@@ -45,6 +49,7 @@ export default async function DashboardPage({ searchParams }: Props) {
           preventivi e ordini.
         </p>
       </Card>
+      {incomplete ? <IncompleteCustomersCard summary={incomplete} /> : null}
       {setup.kind === "guide" ? (
         <SetupGuideCard guide={setup.guide} />
       ) : (

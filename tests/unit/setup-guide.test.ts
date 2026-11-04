@@ -15,6 +15,7 @@ const empty: SetupFacts = {
   linkedBrands: 0,
   unlinkedBrand: null,
   withoutBrand: { total: 0, sample: [] },
+  activeCustomers: 0,
 };
 const alfa = { id: "00000000-0000-4000-8000-0000000000a1", name: "Alfa Srl" };
 
@@ -23,7 +24,12 @@ const statuses = (facts: SetupFacts) => setupGuide(facts).steps.map((step) => st
 describe("percorso guidato (cap. 5.1)", () => {
   it("archivio vuoto: quattro passi da fare, gli altri arriveranno", () => {
     const guide = setupGuide(empty);
-    expect(statuses(empty)).toEqual(["todo", "todo", "todo", "todo", ...Array(8).fill("later")]);
+    expect(statuses(empty)).toEqual([
+      ...Array(4).fill("todo"),
+      ...Array(3).fill("later"),
+      "todo",
+      ...Array(4).fill("later"),
+    ]);
     expect(guide.complete).toBe(false);
     expect(guide.steps[0]!.action).toEqual({
       label: "Aggiungi società",
@@ -32,7 +38,13 @@ describe("percorso guidato (cap. 5.1)", () => {
     // Senza società i passi che ne dipendono non hanno pulsanti finti.
     expect(guide.steps[1]!.action).toBeNull();
     expect(guide.steps[1]!.details).toEqual(["Prima crea una società."]);
-    expect(guide.steps.slice(4).every((step) => step.action === null)).toBe(true);
+    // Tra i passi successivi solo quello dei clienti ha un pulsante: gli altri arriveranno.
+    expect(
+      guide.steps
+        .slice(4)
+        .filter((step) => step.action !== null)
+        .map((step) => step.title),
+    ).toEqual(["Creare o importare le anagrafiche clienti"]);
   });
 
   it("i passi arriverà seguono il §5.1, e il titolare risulta già attivo", () => {
@@ -89,10 +101,29 @@ describe("percorso guidato (cap. 5.1)", () => {
     expect(step.details).toEqual(["Società senza brand collegato: Alfa Srl."]);
   });
 
-  it("tutto fatto: percorso completo", () => {
+  it("clienti: «Fatto» con almeno un cliente attivo; l'importazione arriverà", () => {
+    const todo = setupGuide(empty).steps[7]!;
+    expect(todo).toEqual({
+      title: "Creare o importare le anagrafiche clienti",
+      status: "todo",
+      details: ["Per iniziare basta il nome.", "L'importazione dal vecchio gestionale arriverà."],
+      action: { label: "Aggiungi cliente", href: "/clienti/nuovo" },
+    });
+    const done = setupGuide({ ...empty, activeCustomers: 1 }).steps[7]!;
+    expect(done.status).toBe("done");
+    expect(done.action).toBeNull();
+    expect(done.details).toEqual(["L'importazione dal vecchio gestionale arriverà."]);
+  });
+
+  it("tutto fatto, clienti compresi: percorso completo", () => {
     const facts = { ...empty, activeCompanies: 1, activeBrands: 1, linkedBrands: 1 };
     expect(statuses(facts).slice(0, 4)).toEqual(["done", "done", "done", "done"]);
-    expect(setupGuide(facts).complete).toBe(true);
+    // Senza clienti attivi il percorso non è completo.
+    expect(setupGuide(facts).complete).toBe(false);
+    expect(setupGuide({ ...facts, activeCustomers: 2 }).complete).toBe(true);
+    expect(completeMessage).toBe(
+      "La configurazione di società, conti, brand e clienti è completa. Gli altri passi arriveranno con le prossime funzioni.",
+    );
     expect(completeMessage).not.toMatch(/!|🎉|complimenti/i);
   });
 

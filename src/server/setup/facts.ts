@@ -24,7 +24,7 @@ function fail(what: string): never {
 }
 
 export async function loadSetupFacts(supabase: SupabaseClient<Database>): Promise<SetupFacts> {
-  const [companies, incomplete, withoutAccount, brands, linked, unlinked, withoutBrand] =
+  const [companies, incomplete, withoutAccount, brands, linked, unlinked, withoutBrand, customers] =
     await Promise.all([
       supabase.from("companies").select("id", { count: "exact", head: true }).eq("is_active", true),
       supabase
@@ -72,10 +72,13 @@ export async function loadSetupFacts(supabase: SupabaseClient<Database>): Promis
         .is("company_brands", null)
         .order("legal_name")
         .limit(sampleSize),
+      // Clienti attivi: solo il conteggio, fatto dal database, senza leggere le righe.
+      supabase.from("customers").select("id", { count: "exact", head: true }).eq("is_active", true),
     ]);
 
   if (companies.error || incomplete.error || withoutAccount.error) fail("società");
   if (brands.error || linked.error || unlinked.error || withoutBrand.error) fail("brand");
+  if (customers.error) fail("clienti");
 
   return {
     activeCompanies: companies.count ?? 0,
@@ -113,5 +116,6 @@ export async function loadSetupFacts(supabase: SupabaseClient<Database>): Promis
       total: withoutBrand.count ?? 0,
       sample: withoutBrand.data.map((row) => ({ id: row.id, name: row.legal_name })),
     },
+    activeCustomers: customers.count ?? 0,
   };
 }
