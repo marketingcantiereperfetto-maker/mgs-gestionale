@@ -8,7 +8,8 @@ import { uuidPattern } from "@/server/action-helpers";
 import { can } from "@/server/auth/permissions";
 import { requirePage } from "@/server/auth/page-access";
 import { listCompanies } from "@/server/companies/queries";
-import { getCustomer } from "@/server/customers/queries";
+import { getCustomer, getCustomerAuthors } from "@/server/customers/queries";
+import { formatDateTime } from "@/lib/format";
 import { CustomerActiveForm } from "./customer-active-form";
 import { CustomerForm } from "./customer-form";
 
@@ -33,6 +34,7 @@ export default async function CustomerPage({ params, searchParams }: Props) {
   if (!customer) notFound();
 
   const completeness = customerCompleteness(customer);
+  const authors = await getCustomerAuthors(customer);
   const canEditGroup = can(user, "customers.group_company");
   // Le società servono solo a chi può indicare la società del gruppo, o per mostrarne il nome.
   const companies =
@@ -52,6 +54,10 @@ export default async function CustomerPage({ params, searchParams }: Props) {
         {!customer.isActive ? <Badge tone="warning">Disattivato</Badge> : null}
       </div>
 
+      <p className="mt-2 text-[13px] text-ink-muted" data-testid="customer-authors">
+        Creato da {authors.createdBy} il {formatDateTime(customer.createdAt)} · Ultima modifica di{" "}
+        {authors.updatedBy} il {formatDateTime(customer.updatedAt)}
+      </p>
       <div className="mt-6 space-y-2" data-testid="completeness">
         {esito === "creato" ? <Notice tone="success">Cliente creato.</Notice> : null}
         {completeness.complete ? (

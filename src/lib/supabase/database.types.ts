@@ -213,6 +213,7 @@ export type Database = {
           address_province: string | null;
           address_street: string | null;
           created_at: string;
+          created_by: string | null;
           creation_key: string | null;
           foreign_tax_id: string | null;
           group_company_id: string | null;
@@ -229,6 +230,7 @@ export type Database = {
           subject_type: Database["public"]["Enums"]["customer_subject_type"] | null;
           tax_code: string | null;
           updated_at: string;
+          updated_by: string | null;
           vat_exemption_nature: string | null;
           vat_number: string | null;
           vat_regime: Database["public"]["Enums"]["vat_regime"] | null;
@@ -240,6 +242,7 @@ export type Database = {
           address_province?: string | null;
           address_street?: string | null;
           created_at?: string;
+          created_by?: string | null;
           creation_key?: string | null;
           foreign_tax_id?: string | null;
           group_company_id?: string | null;
@@ -256,6 +259,7 @@ export type Database = {
           subject_type?: Database["public"]["Enums"]["customer_subject_type"] | null;
           tax_code?: string | null;
           updated_at?: string;
+          updated_by?: string | null;
           vat_exemption_nature?: string | null;
           vat_number?: string | null;
           vat_regime?: Database["public"]["Enums"]["vat_regime"] | null;
@@ -267,6 +271,7 @@ export type Database = {
           address_province?: string | null;
           address_street?: string | null;
           created_at?: string;
+          created_by?: string | null;
           creation_key?: string | null;
           foreign_tax_id?: string | null;
           group_company_id?: string | null;
@@ -283,6 +288,7 @@ export type Database = {
           subject_type?: Database["public"]["Enums"]["customer_subject_type"] | null;
           tax_code?: string | null;
           updated_at?: string;
+          updated_by?: string | null;
           vat_exemption_nature?: string | null;
           vat_number?: string | null;
           vat_regime?: Database["public"]["Enums"]["vat_regime"] | null;
@@ -370,6 +376,13 @@ export type Database = {
         Returns: {
           email: string;
           full_name: string;
+          user_id: string;
+        }[];
+      };
+      customer_author_names: {
+        Args: { author_ids: string[] };
+        Returns: {
+          label: string;
           user_id: string;
         }[];
       };

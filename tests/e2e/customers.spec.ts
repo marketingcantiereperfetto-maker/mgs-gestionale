@@ -227,3 +227,53 @@ test("l'amministrazione cataloghi non apre i clienti", async ({ page }) => {
       .getByRole("button", { name: "Clienti" }),
   ).toHaveCount(0);
 });
+
+test("consulente: ricerca per nome, partita IVA, codice fiscale e PEC", async ({ page }) => {
+  await signIn(page, users.consultant!);
+  await openReady(page, "/clienti");
+  const search = page.getByRole("searchbox", { name: /^Cerca per nome/ });
+  const table = page.getByTestId("customers-table");
+
+  for (const [term, expected] of [
+    ["0123456789", customerName],
+    ["rssmra85t10a56nh", privateName],
+    ["privato@pec.prova.test", privateName],
+    [mine.slice(-8), customerName],
+  ] as const) {
+    await search.fill(term);
+    await page.getByRole("button", { name: "Cerca" }).click();
+    await page.waitForURL(/cerca=/);
+    await expect(page.getByRole("link", { name: expected })).toBeVisible();
+    // I risultati mostrano solo nome, tipo, comune e completezza.
+    expect(await table.innerText()).not.toMatch(/RSSMRA|01234567897|pec\.prova|Via di Prova/);
+  }
+
+  await search.fill(`${mine} nessuno così`);
+  await page.getByRole("button", { name: "Cerca" }).click();
+  await expect(page.getByText("Nessun cliente trovato con questa ricerca.")).toBeVisible();
+  await page.getByRole("link", { name: "Azzera" }).click();
+  await expect(page.getByRole("link", { name: customerName })).toBeVisible();
+});
+
+test("consulente: la scheda dice chi ha creato e chi ha modificato per ultimo", async ({
+  page,
+}) => {
+  await signIn(page, users.consultant!);
+  await openReady(page, privateUrl);
+  // Il cliente privato l'ha inserito la procedura di prova, senza un utente.
+  await expect(page.getByTestId("customer-authors")).toContainText(
+    "Creato da Procedura di manutenzione il",
+  );
+
+  await openReady(page, customerUrl);
+  const authors = page.getByTestId("customer-authors");
+  await expect(authors).toContainText(/Creato da Prova owner il \d{2}\/\d{2}\/\d{4}, \d{2}:\d{2}/);
+  await expect(authors).toContainText("Ultima modifica di Prova sales_manager il");
+
+  await page.getByLabel("Comune").fill("Comune di Prova");
+  await page.getByRole("button", { name: "Salva" }).click();
+  await expect(status(page, "Cliente salvato.")).toBeVisible();
+  await expect(authors).toContainText("Ultima modifica di Prova sales_consultant il");
+  // Della persona compare solo il nome, nient'altro del profilo.
+  expect(await authors.innerText()).not.toMatch(/@prova\.test|Consulente|Titolare/);
+});

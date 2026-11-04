@@ -1,4 +1,5 @@
 import type { CustomerData, SubjectType, VatRegime } from "@/domain/customers/customer";
+import { customerSearchFilter } from "@/domain/customers/search";
 import type { Database } from "@/lib/supabase/database.types";
 import { createSupabaseServerClient } from "@/server/supabase";
 
@@ -8,6 +9,10 @@ export type Customer = CustomerData & {
   id: string;
   isActive: boolean;
   groupCompanyId: string | null;
+  createdBy: string | null;
+  createdAt: string;
+  updatedBy: string | null;
+  updatedAt: string;
 };
 
 export function toCustomer(row: CustomerRow): Customer {
@@ -34,6 +39,10 @@ export function toCustomer(row: CustomerRow): Customer {
     intentDeclarationDate: row.intent_declaration_date,
     isActive: row.is_active,
     groupCompanyId: row.group_company_id,
+    createdBy: row.created_by,
+    createdAt: row.created_at,
+    updatedBy: row.updated_by,
+    updatedAt: row.updated_at,
   };
 }
 
@@ -63,9 +72,12 @@ export function toCustomerColumns(customer: CustomerData) {
 
 // L'elenco legge le righe intere per calcolare la completezza, ma mostra solo nome, tipo,
 // comune e completezza (decisione del 4 novembre 2026).
-export async function listCustomers(): Promise<Customer[]> {
+export async function listCustomers(search?: string): Promise<Customer[]> {
   const supabase = await createSupabaseServerClient();
-  const { data, error } = await supabase.from("customers").select("*").order("name");
+  let query = supabase.from("customers").select("*").order("name");
+  const filter = customerSearchFilter(search);
+  if (filter) query = query.or(filter);
+  const { data, error } = await query;
   if (error) throw new Error("Clienti non letti");
   return data.map(toCustomer);
 }
@@ -75,4 +87,23 @@ export async function getCustomer(id: string): Promise<Customer | null> {
   const { data, error } = await supabase.from("customers").select("*").eq("id", id).maybeSingle();
   if (error) throw new Error("Cliente non letto");
   return data ? toCustomer(data) : null;
+}
+
+export type CustomerAuthors = { createdBy: string; updatedBy: string };
+
+const maintenance = "Procedura di manutenzione";
+
+// Nomi di chi ha creato e modificato il cliente, da una funzione protetta che restituisce solo
+// il nome del profilo (o l'email se manca) degli autori dei clienti.
+export async function getCustomerAuthors(customer: Customer): Promise<CustomerAuthors> {
+  const ids = [customer.createdBy, customer.updatedBy].filter((id): id is string => id !== null);
+  const names = new Map<string, string>();
+  if (ids.length > 0) {
+    const supabase = await createSupabaseServerClient();
+    const { data } = await supabase.rpc("customer_author_names", { author_ids: ids });
+    for (const row of data ?? []) names.set(row.user_id, row.label);
+  }
+  const name = (id: string | null) =>
+    id === null ? maintenance : (names.get(id) ?? "un utente non più presente");
+  return { createdBy: name(customer.createdBy), updatedBy: name(customer.updatedBy) };
 }
