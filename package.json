@@ -20,7 +20,7 @@
     "db:status": "supabase migration list --linked",
     "db:push": "supabase db push --linked",
     "utenti:crea-titolare": "node --env-file=.env.local scripts/create-owner.ts",
-    "test:db": "supabase test db --linked",
+    "test:db": "node --env-file-if-exists=.env.local scripts/test-db.ts",
     "prova:cancella": "node --env-file=.env.local scripts/delete-test-data.ts"
   },
   "dependencies": {

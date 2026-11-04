@@ -20,7 +20,7 @@ const customerName = `${mine} Cliente Srl`;
 const privateName = `${mine} Privato`;
 const groupCompany = `${mine} Gruppo Srl`;
 const users: Partial<
-  Record<"owner" | "consultant" | "catalog" | "finance" | "manager", TemporaryUser>
+  Record<"owner" | "consultant" | "catalog" | "finance" | "manager" | "busy", TemporaryUser>
 > = {};
 let customerUrl = "";
 let privateUrl = "";
@@ -32,6 +32,8 @@ test.beforeAll(async () => {
   users.catalog = await createTemporaryUser("catalog_admin");
   users.finance = await createTemporaryUser("finance_admin");
   users.manager = await createTemporaryUser("sales_manager");
+  // Consulente usata solo per superare il limite delle ricerche (resta bloccata per un minuto).
+  users.busy = await createTemporaryUser("sales_consultant");
   const { data, error } = await admin()
     .from("companies")
     .insert({ legal_name: groupCompany })
@@ -68,8 +70,9 @@ test("si crea un cliente con il solo nome: risulta Incompleta e dice cosa manca"
   const menu = page.getByRole("navigation", { name: "Menu principale" });
   await menu.getByRole("button", { name: "Clienti", exact: true }).click();
   await menu.getByRole("link", { name: "Elenco" }).click();
-  await page.getByRole("link", { name: "Aggiungi cliente" }).click();
   await page.waitForLoadState("networkidle");
+  await page.getByRole("button", { name: "Aggiungi cliente" }).click();
+  await expect(page.getByRole("dialog", { name: "Aggiungi cliente" })).toBeVisible();
   await page.getByLabel("Nome o ragione sociale").fill(`  ${customerName}  `);
   // Doppio clic: si crea un solo cliente.
   await page.getByRole("button", { name: "Crea cliente" }).dblclick();
@@ -276,4 +279,183 @@ test("consulente: la scheda dice chi ha creato e chi ha modificato per ultimo", 
   await expect(authors).toContainText("Ultima modifica di Prova sales_consultant il");
   // Della persona compare solo il nome, nient'altro del profilo.
   expect(await authors.innerText()).not.toMatch(/@prova\.test|Consulente|Titolare/);
+});
+
+const dialog = (page: Page) => page.getByRole("dialog", { name: "Aggiungi cliente" });
+
+async function openDialog(page: Page) {
+  await openReady(page, "/clienti");
+  await page.getByRole("button", { name: "Aggiungi cliente" }).click();
+  await expect(dialog(page)).toBeVisible();
+}
+
+test("finestra «Aggiungi cliente»: focus dentro, Esc chiude, il focus torna al pulsante", async ({
+  page,
+}) => {
+  await signIn(page, users.consultant!);
+  await openDialog(page);
+  await expect(dialog(page).getByLabel("Nome o ragione sociale")).toBeFocused();
+  for (let tab = 0; tab < 40; tab++) {
+    await page.keyboard.press("Tab");
+    const inside = await page.evaluate(
+      () => document.activeElement === document.body || !!document.activeElement?.closest("dialog"),
+    );
+    expect(inside, `tasto Tab n. ${tab + 1}`).toBe(true);
+  }
+  await page.keyboard.press("Escape");
+  await expect(dialog(page)).toBeHidden();
+  await expect(page.getByRole("button", { name: "Aggiungi cliente" })).toBeFocused();
+});
+
+test("clienti simili mentre si scrive, con solo nome e comune; «Usa questo cliente»", async ({
+  page,
+}) => {
+  await signIn(page, users.consultant!);
+  await openDialog(page);
+  await dialog(page).getByLabel("Nome o ragione sociale").fill(customerName.replace(" Srl", ""));
+  const similar = dialog(page).getByTestId("similar-customers");
+  const item = similar.getByRole("listitem").filter({ hasText: customerName });
+  await expect(item).toContainText("nome simile");
+  // Il comune è quello rimesso dal consulente nella prova precedente.
+  await expect(item).toContainText("· Comune di Prova");
+  expect(await similar.innerText()).not.toMatch(/01234567897|RSSMRA|pec\.prova|Via di Prova/);
+
+  await dialog(page).getByLabel("Partita IVA").fill("01234567897");
+  await expect(
+    similar.getByRole("listitem").filter({ hasText: "stessa partita IVA" }),
+  ).toContainText(customerName);
+
+  await item.getByRole("button", { name: "Usa questo cliente" }).first().click();
+  await page.waitForURL(customerUrl);
+  await expect(page.getByRole("heading", { level: 1, name: customerName })).toBeVisible();
+});
+
+test("partita IVA identica: serve «È un cliente diverso», senza codici nei messaggi", async ({
+  page,
+}) => {
+  const name = `${mine} Stessa IVA Srl`;
+  await signIn(page, users.consultant!);
+  await openDialog(page);
+  await dialog(page).getByLabel("Nome o ragione sociale").fill(name);
+  await dialog(page).getByLabel("Partita IVA").fill("01234567897");
+  await dialog(page).getByRole("button", { name: "Crea cliente" }).click();
+  const warning = dialog(page).getByRole("alert").filter({ hasText: "Esiste già un cliente" });
+  await expect(warning).toContainText(
+    `Esiste già un cliente con questa partita IVA: «${customerName}» (Comune di Prova).`,
+  );
+  expect(await warning.innerText()).not.toContain("01234567897");
+  const { data: none } = await admin().from("customers").select("id").eq("name", name);
+  expect(none).toEqual([]);
+
+  // I valori scritti restano; con la casella il cliente si crea e si apre la sua scheda.
+  await expect(dialog(page).getByLabel("Partita IVA")).toHaveValue("01234567897");
+  await dialog(page).getByLabel("È un cliente diverso").check();
+  await dialog(page).getByRole("button", { name: "Crea cliente" }).click();
+  await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
+  const { data } = await admin().from("customers").select("id").eq("name", name);
+  expect(data).toHaveLength(1);
+});
+
+test("stesso codice fiscale e stesso codice ufficio PA: bloccato anche con la casella", async ({
+  page,
+}) => {
+  const { error } = await admin()
+    .from("customers")
+    .insert({
+      name: `${mine} Comune Inventato`,
+      tax_code: "80000000002",
+      pa_office_code: "UFPR01",
+    });
+  expect(error).toBeNull();
+
+  await signIn(page, users.consultant!);
+  await openDialog(page);
+  await dialog(page).getByLabel("Nome o ragione sociale").fill(`${mine} Ufficio Doppio`);
+  await dialog(page).getByLabel("Codice fiscale").fill("80000000002");
+  await dialog(page).getByLabel("Codice univoco ufficio (6 caratteri)").fill("ufpr01");
+  await dialog(page).getByRole("button", { name: "Crea cliente" }).click();
+  const block = dialog(page)
+    .getByRole("alert")
+    .filter({ hasText: "Non si può salvare un doppione." });
+  await expect(block).toContainText("con questo codice fiscale e lo stesso codice ufficio");
+  expect(await block.innerText()).not.toContain("80000000002");
+  await expect(dialog(page).getByLabel("È un cliente diverso")).toHaveCount(0);
+});
+
+test("le stesse regole valgono nella scheda", async ({ page }) => {
+  await signIn(page, users.consultant!);
+  await openReady(page, privateUrl);
+  await page.getByLabel("Partita IVA").fill("01234567897");
+  await page.getByRole("button", { name: "Salva" }).click();
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Esiste già un cliente con questa partita IVA" }),
+  ).toBeVisible();
+  await expect(page.getByLabel("È un cliente diverso")).toBeVisible();
+});
+
+test("clienti disattivati nei suggerimenti: «Riattiva» solo per chi può", async ({ page }) => {
+  const name = `${mine} Disattivato Snc`;
+  const { error } = await admin().from("customers").insert({ name, is_active: false });
+  expect(error).toBeNull();
+
+  await signIn(page, users.consultant!);
+  await openDialog(page);
+  await dialog(page).getByLabel("Nome o ragione sociale").fill(name);
+  const item = dialog(page)
+    .getByTestId("similar-customers")
+    .getByRole("listitem")
+    .filter({ hasText: name });
+  await expect(item).toContainText("Disattivato");
+  await expect(item).toContainText("Cliente disattivato: chiedi a un responsabile");
+  await expect(item.getByRole("button")).toHaveCount(0);
+
+  // Si esce dal consulente e si entra come responsabile commerciale.
+  await page.context().clearCookies();
+  await signIn(page, users.manager!);
+  await openDialog(page);
+  await dialog(page).getByLabel("Nome o ragione sociale").fill(name);
+  const managerItem = dialog(page)
+    .getByTestId("similar-customers")
+    .getByRole("listitem")
+    .filter({ hasText: name });
+  await managerItem.getByRole("button", { name: "Riattiva" }).click();
+  await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
+  await expect(page.getByText("Disattivato", { exact: true })).toHaveCount(0);
+});
+
+test("la pagina «Nuovo cliente» usa lo stesso modulo", async ({ page }) => {
+  const name = `${mine} Dalla Pagina`;
+  await signIn(page, users.consultant!);
+  await openReady(page, "/clienti/nuovo");
+  await page.getByLabel("Nome o ragione sociale").fill(name);
+  await page.getByRole("button", { name: "Crea cliente" }).dblclick();
+  await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
+  const { data } = await admin().from("customers").select("id").eq("name", name);
+  expect(data).toHaveLength(1);
+});
+
+test("oltre il limite delle ricerche: messaggio gentile, il modulo funziona comunque", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await signIn(page, users.busy!);
+  await openDialog(page);
+  const name = dialog(page).getByLabel("Nome o ragione sociale");
+  const notice = dialog(page).getByTestId("similar-error");
+
+  // Ogni testo diverso, dopo la pausa di scrittura, è una ricerca: la 21ª supera il limite.
+  for (let search = 1; search <= 21; search++) {
+    const response = page.waitForResponse(
+      (answer) => answer.request().method() === "POST" && answer.url().includes("/clienti"),
+    );
+    await name.fill(`${mine} ricerca ${search}`);
+    await response;
+  }
+  await expect(notice).toHaveText("Troppe ricerche ravvicinate, riprova tra un minuto.");
+
+  // Il modulo non è bloccato: il cliente si crea lo stesso.
+  const created = `${mine} Creato dopo il limite`;
+  await name.fill(created);
+  await dialog(page).getByRole("button", { name: "Crea cliente" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: created })).toBeVisible();
 });
