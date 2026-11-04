@@ -171,3 +171,90 @@ describe("registro in italiano semplice", () => {
     );
   });
 });
+
+describe("registro dei clienti: dati personali senza valori", () => {
+  const customer = "00000000-0000-4000-8000-0000000000d1";
+  const base = { id: customer, name: "Cliente Inventato", subject_type: null, is_active: true };
+
+  it("creazione, disattivazione e modifiche con solo nome e tipo in chiaro", () => {
+    const names: AuditNames = { people: new Map(), companies: new Map(), brands: new Map() };
+    const make = (overrides: Partial<AuditEntry>): AuditEntry => ({
+      id: 1,
+      occurredAt: "2026-11-04T10:00:00Z",
+      actorId: null,
+      table: "customers",
+      recordId: customer,
+      action: "insert",
+      oldData: null,
+      newData: base,
+      ...overrides,
+    });
+    expect(describeEntry(make({}), names).sentence).toBe(
+      "ha creato il cliente «Cliente Inventato»",
+    );
+    expect(
+      describeEntry(
+        make({ action: "update", oldData: base, newData: { ...base, is_active: false } }),
+        names,
+      ).sentence,
+    ).toBe("ha disattivato il cliente «Cliente Inventato»");
+
+    const line = describeEntry(
+      make({
+        action: "update",
+        oldData: { ...base, tax_code: null, pec: null, address_street: null },
+        newData: {
+          ...base,
+          name: "Cliente Rinominato",
+          subject_type: "private",
+          tax_code: "RSSMRA85T10A562S",
+          pec: "privato@pec.prova.test",
+          address_street: "Via Privata 3",
+        },
+      }),
+      names,
+    );
+    expect(line.changes).toEqual([
+      { label: "Nome o ragione sociale", before: "Cliente Inventato", after: "Cliente Rinominato" },
+      { label: "Tipo di soggetto", before: "(vuoto)", after: "Privato" },
+      { label: "Codice fiscale" },
+      { label: "Via e numero civico" },
+      { label: "PEC" },
+    ]);
+    expect(JSON.stringify(line)).not.toMatch(/RSSMRA|privato@|Via Privata/);
+  });
+});
+
+describe("registro dei clienti ridotto alla scrittura", () => {
+  it("dalle righe con soli nomi dei campi: nome e tipo con valore, gli altri solo nominati", () => {
+    const customer = "00000000-0000-4000-8000-0000000000d2";
+    const names: AuditNames = { people: new Map(), companies: new Map(), brands: new Map() };
+    const line = describeEntry(
+      {
+        id: 2,
+        occurredAt: "2026-11-04T10:00:00Z",
+        actorId: null,
+        table: "customers",
+        recordId: customer,
+        action: "update",
+        oldData: { id: customer, name: "Vecchio", subject_type: null, is_active: true },
+        newData: {
+          id: customer,
+          name: "Nuovo",
+          subject_type: "private",
+          is_active: true,
+          changed_fields: ["address_street", "pec", "tax_code"],
+        },
+      },
+      names,
+    );
+    expect(line.sentence).toBe("ha modificato il cliente «Nuovo»");
+    expect(line.changes).toEqual([
+      { label: "Nome o ragione sociale", before: "Vecchio", after: "Nuovo" },
+      { label: "Tipo di soggetto", before: "(vuoto)", after: "Privato" },
+      { label: "Via e numero civico" },
+      { label: "PEC" },
+      { label: "Codice fiscale" },
+    ]);
+  });
+});

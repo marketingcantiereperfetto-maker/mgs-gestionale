@@ -22,6 +22,7 @@ export type AuditFilters = {
   kind?: AuditKind;
   companyId?: string;
   brandId?: string;
+  customerId?: string;
   after?: AuditCursor;
 };
 
@@ -44,6 +45,7 @@ export function parseAuditFilters(params: Record<string, string | undefined>): A
     filters.kind = params.tipo as AuditKind;
   if (uuidPattern.test(params.societa ?? "")) filters.companyId = params.societa;
   if (uuidPattern.test(params.brand ?? "")) filters.brandId = params.brand;
+  if (uuidPattern.test(params.cliente ?? "")) filters.customerId = params.cliente;
   const cursor = cursorPattern.exec(params.dopo ?? "");
   if (cursor) filters.after = { at: cursor[1]!, id: Number(cursor[2]) };
   return filters;
@@ -65,6 +67,9 @@ function combinedCondition(filters: AuditFilters): string | null {
   if (filters.brandId) {
     const id = filters.brandId;
     parts.push(`and(table_name.in.(brands,company_brands),record_id.eq.${id})`);
+  }
+  if (filters.customerId) {
+    parts.push(`and(table_name.eq.customers,record_id.eq.${filters.customerId})`);
   }
   if (filters.after) {
     const at = `"${filters.after.at}"`;

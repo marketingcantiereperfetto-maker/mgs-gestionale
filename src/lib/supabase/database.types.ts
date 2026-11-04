@@ -205,6 +205,104 @@ export type Database = {
           },
         ];
       };
+      customers: {
+        Row: {
+          address_city: string | null;
+          address_country: string | null;
+          address_postal_code: string | null;
+          address_province: string | null;
+          address_street: string | null;
+          created_at: string;
+          created_by: string | null;
+          creation_key: string | null;
+          foreign_tax_id: string | null;
+          group_company_id: string | null;
+          id: string;
+          intent_declaration_date: string | null;
+          intent_declaration_number: string | null;
+          is_active: boolean;
+          name: string;
+          pa_office_code: string | null;
+          pa_office_name: string | null;
+          pec: string | null;
+          sdi_code: string | null;
+          split_payment: boolean | null;
+          subject_type: Database["public"]["Enums"]["customer_subject_type"] | null;
+          tax_code: string | null;
+          updated_at: string;
+          updated_by: string | null;
+          vat_exemption_nature: string | null;
+          vat_number: string | null;
+          vat_regime: Database["public"]["Enums"]["vat_regime"] | null;
+        };
+        Insert: {
+          address_city?: string | null;
+          address_country?: string | null;
+          address_postal_code?: string | null;
+          address_province?: string | null;
+          address_street?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          creation_key?: string | null;
+          foreign_tax_id?: string | null;
+          group_company_id?: string | null;
+          id?: string;
+          intent_declaration_date?: string | null;
+          intent_declaration_number?: string | null;
+          is_active?: boolean;
+          name: string;
+          pa_office_code?: string | null;
+          pa_office_name?: string | null;
+          pec?: string | null;
+          sdi_code?: string | null;
+          split_payment?: boolean | null;
+          subject_type?: Database["public"]["Enums"]["customer_subject_type"] | null;
+          tax_code?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          vat_exemption_nature?: string | null;
+          vat_number?: string | null;
+          vat_regime?: Database["public"]["Enums"]["vat_regime"] | null;
+        };
+        Update: {
+          address_city?: string | null;
+          address_country?: string | null;
+          address_postal_code?: string | null;
+          address_province?: string | null;
+          address_street?: string | null;
+          created_at?: string;
+          created_by?: string | null;
+          creation_key?: string | null;
+          foreign_tax_id?: string | null;
+          group_company_id?: string | null;
+          id?: string;
+          intent_declaration_date?: string | null;
+          intent_declaration_number?: string | null;
+          is_active?: boolean;
+          name?: string;
+          pa_office_code?: string | null;
+          pa_office_name?: string | null;
+          pec?: string | null;
+          sdi_code?: string | null;
+          split_payment?: boolean | null;
+          subject_type?: Database["public"]["Enums"]["customer_subject_type"] | null;
+          tax_code?: string | null;
+          updated_at?: string;
+          updated_by?: string | null;
+          vat_exemption_nature?: string | null;
+          vat_number?: string | null;
+          vat_regime?: Database["public"]["Enums"]["vat_regime"] | null;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "customers_group_company_id_fkey";
+            columns: ["group_company_id"];
+            isOneToOne: false;
+            referencedRelation: "companies";
+            referencedColumns: ["id"];
+          },
+        ];
+      };
       profile_companies: {
         Row: {
           company_id: string;
@@ -281,6 +379,13 @@ export type Database = {
           user_id: string;
         }[];
       };
+      customer_author_names: {
+        Args: { author_ids: string[] };
+        Returns: {
+          label: string;
+          user_id: string;
+        }[];
+      };
       health_check: { Args: never; Returns: Json };
       mark_password_set: { Args: never; Returns: undefined };
       set_bank_account_active: {
@@ -294,7 +399,10 @@ export type Database = {
       user_has_password: { Args: { target_user_id: string }; Returns: boolean };
     };
     Enums: {
+      customer_subject_type:
+        "company" | "professional" | "private" | "public_administration" | "foreign";
       user_role: "owner" | "sales_manager" | "sales_consultant" | "catalog_admin" | "finance_admin";
+      vat_regime: "ordinary" | "exempt" | "reverse_charge" | "intent_declaration";
     };
     CompositeTypes: {
       [_ in never]: never;
@@ -416,7 +524,15 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
+      customer_subject_type: [
+        "company",
+        "professional",
+        "private",
+        "public_administration",
+        "foreign",
+      ],
       user_role: ["owner", "sales_manager", "sales_consultant", "catalog_admin", "finance_admin"],
+      vat_regime: ["ordinary", "exempt", "reverse_charge", "intent_declaration"],
     },
   },
 } as const;

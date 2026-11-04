@@ -1,7 +1,7 @@
-// Cancella dal database DI PROVA società e brand di dati inventati, con conti, collegamenti e
-// loghi. Il registro delle modifiche non si tocca. Si rifiuta di girare su altri progetti.
-// Uso: npm run prova:cancella -- --societa "NOME ESATTO" --brand "NOME ESATTO" [--conferma]
-// (--societa e --brand si possono ripetere). Senza --conferma mostra solo cosa cancellerebbe.
+// Cancella dal database DI PROVA società, brand e clienti di dati inventati, con conti,
+// collegamenti e loghi. Il registro delle modifiche non si tocca. Si rifiuta di girare su altri progetti.
+// Uso: npm run prova:cancella -- --societa "NOME ESATTO" --brand "NOME ESATTO"
+//        --cliente "NOME ESATTO" [--conferma] (ognuno si può ripetere). Senza --conferma mostra solo cosa cancellerebbe.
 import { createClient } from "@supabase/supabase-js";
 import { parseArgs } from "node:util";
 import type { Database } from "../src/lib/supabase/database.types.ts";
@@ -16,14 +16,16 @@ const { values } = parseArgs({
   options: {
     societa: { type: "string", multiple: true, default: [] },
     brand: { type: "string", multiple: true, default: [] },
+    cliente: { type: "string", multiple: true, default: [] },
     conferma: { type: "boolean", default: false },
   },
 });
 
 const companyNames = values.societa.map((name) => name.trim()).filter(Boolean);
 const brandNames = values.brand.map((name) => name.trim()).filter(Boolean);
-if (companyNames.length + brandNames.length === 0) {
-  fail('indica almeno --societa "…" o --brand "…" con il nome esatto.');
+const customerNames = values.cliente.map((name) => name.trim()).filter(Boolean);
+if (companyNames.length + brandNames.length + customerNames.length === 0) {
+  fail('indica almeno --societa "…", --brand "…" o --cliente "…" con il nome esatto.');
 }
 
 const url = process.env.NEXT_PUBLIC_SUPABASE_URL;
@@ -59,6 +61,14 @@ const brands = brandNames.length
   : { data: [], error: null };
 if (brands.error) fail(`brand non letti (${brands.error.message}).`);
 
+const customers = customerNames.length
+  ? await supabase.from("customers").select("id, name, is_active").in("name", customerNames)
+  : { data: [], error: null };
+if (customers.error) fail(`clienti non letti (${customers.error.message}).`);
+for (const name of customerNames) {
+  if (!customers.data.some((customer) => customer.name === name)) fail(`nessun cliente «${name}».`);
+}
+
 for (const name of companyNames) {
   if (!companies.data.some((company) => company.legal_name === name))
     fail(`nessuna società «${name}».`);
@@ -69,17 +79,20 @@ for (const name of brandNames) {
 
 const companyIds = companies.data.map((company) => company.id);
 const brandIds = brands.data.map((brand) => brand.id);
-const links = await supabase
-  .from("company_brands")
-  .select("company_id, brand_id")
-  .or(
-    [
-      companyIds.length ? `company_id.in.(${companyIds.join(",")})` : "",
-      brandIds.length ? `brand_id.in.(${brandIds.join(",")})` : "",
-    ]
-      .filter(Boolean)
-      .join(","),
-  );
+const links =
+  companyIds.length + brandIds.length > 0
+    ? await supabase
+        .from("company_brands")
+        .select("company_id, brand_id")
+        .or(
+          [
+            companyIds.length ? `company_id.in.(${companyIds.join(",")})` : "",
+            brandIds.length ? `brand_id.in.(${brandIds.join(",")})` : "",
+          ]
+            .filter(Boolean)
+            .join(","),
+        )
+    : { data: [], error: null };
 if (links.error) fail(`collegamenti non letti (${links.error.message}).`);
 
 const files: string[] = [];
@@ -100,6 +113,25 @@ for (const brand of brands.data) {
 for (const link of links.data)
   console.log(`Collegamento brand ${link.brand_id} ↔ società ${link.company_id}`);
 for (const file of files) console.log(`File logo ${file}`);
+
+// Un cliente indicato come società del gruppo impedisce di cancellare quella società.
+if (companyIds.length > 0) {
+  const groupCustomers = await supabase
+    .from("customers")
+    .select("name")
+    .in("group_company_id", companyIds)
+    .not(
+      "id",
+      "in",
+      `(${customers.data.map((customer) => customer.id).join(",") || "00000000-0000-0000-0000-000000000000"})`,
+    );
+  if (groupCustomers.error) fail("clienti collegati non letti.");
+  if (groupCustomers.data.length > 0) {
+    fail(
+      `la società è indicata come società del gruppo dal cliente «${groupCustomers.data[0]!.name}».`,
+    );
+  }
+}
 
 if (!values.conferma) {
   console.log("Prova senza effetti: aggiungi --conferma per cancellare quanto elencato.");
@@ -129,6 +161,17 @@ const deletedBrands = brandIds.length
   ? await supabase.from("brands").delete().in("id", brandIds).select("id")
   : { data: [], error: null };
 if (deletedBrands.error) fail(`brand non cancellati (${deletedBrands.error.message}).`);
+const deletedCustomers = customers.data.length
+  ? await supabase
+      .from("customers")
+      .delete()
+      .in(
+        "id",
+        customers.data.map((customer) => customer.id),
+      )
+      .select("id")
+  : { data: [], error: null };
+if (deletedCustomers.error) fail(`clienti non cancellati (${deletedCustomers.error.message}).`);
 const deletedCompanies = companyIds.length
   ? await supabase.from("companies").delete().in("id", companyIds).select("id")
   : { data: [], error: null };
@@ -138,5 +181,6 @@ console.log(
   `Cancellati: ${deletedCompanies.data.length} società, ${accounts.data.length} conti, ` +
     `${deletedBrands.data.length} brand, ` +
     `${removedLinks.data.length + removedLinksByCompany.data.length} collegamenti, ` +
-    `${files.length} file di logo. Registro delle modifiche intatto.`,
+    `${files.length} file di logo, ${deletedCustomers.data.length} clienti. ` +
+    "Registro delle modifiche intatto.",
 );

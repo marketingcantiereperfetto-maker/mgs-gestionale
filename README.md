@@ -53,7 +53,7 @@ I test in `tests/integration` usano il database di prova di `.env.local`; senza 
 
 Database: `npm run db:status` (migrazioni applicate), `npm run db:push` (applica le nuove al database collegato).
 Test nel browser per ruolo: `npm run test:e2e` crea un utente di prova temporaneo per ogni ruolo (indirizzi `e2e-…@prova.test`, password solo in memoria), lo usa e lo cancella alla fine. Servono le variabili di `.env.local`; senza, quei test vengono saltati.
-Pulizia del database di prova: `npm run prova:cancella -- --societa "NOME ESATTO" --brand "NOME ESATTO"` mostra cosa cancellerebbe (società e brand di dati inventati, con conti, collegamenti e loghi); con `--conferma` cancella. Si rifiuta di girare se il progetto non è quello di prova; il registro delle modifiche non si tocca.
+Pulizia del database di prova: `npm run prova:cancella -- --societa "NOME ESATTO" --brand "NOME ESATTO" --cliente "NOME ESATTO"` mostra cosa cancellerebbe (società, brand e clienti di dati inventati, con conti, collegamenti e loghi); con `--conferma` cancella. Si rifiuta di girare se il progetto non è quello di prova; il registro delle modifiche non si tocca.
 Test del database: `npm run test:db` (prove in `supabase/tests/database` sul database di prova, dentro una transazione annullata: non lascia dati).
 Primo titolare: `npm run utenti:crea-titolare -- --email nome@dominio.it --sito https://mgs-gestionale.vercel.app` (prova senza effetti; con `--conferma` crea l'invito e stampa nel Terminale il link personale, valido 1 ora, da non copiare in chat).
 Test nel browser: `npm run test:e2e` (la prima volta: `npx playwright install chromium`).

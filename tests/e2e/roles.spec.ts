@@ -63,7 +63,12 @@ const mainEntries = [
   },
   { label: "Ordini", item: "Tutti", href: "/ordini", title: "Ordini" },
   { label: "Catalogo", item: "Categorie", href: "/catalogo/categorie", title: "Categorie" },
-  { label: "Clienti", item: "Elenco", href: "/clienti", title: "Clienti" },
+  {
+    label: "Clienti",
+    item: "Consulenti",
+    href: "/clienti/consulenti",
+    title: "Consulenti",
+  },
   { label: "Statistiche", item: "Panoramica", href: "/statistiche", title: "Statistiche" },
   {
     label: "Controllo di gestione",
@@ -118,15 +123,7 @@ const expectedMenus: Record<UserRole, string[]> = {
     "Statistiche",
     "Manuali",
   ],
-  catalog_admin: [
-    "Dashboard",
-    "Preventivi",
-    "Ordini",
-    "Catalogo",
-    "Clienti",
-    "Statistiche",
-    "Manuali",
-  ],
+  catalog_admin: ["Dashboard", "Preventivi", "Ordini", "Catalogo", "Statistiche", "Manuali"],
   finance_admin: [
     "Dashboard",
     "Preventivi",
@@ -166,6 +163,7 @@ test("accesso diretto a una sezione non consentita: si torna alla dashboard", as
     ["sales_consultant", "/catalogo/materiali"],
     ["sales_consultant", "/controllo-di-gestione"],
     ["catalog_admin", "/controllo-di-gestione/conto-economico"],
+    ["catalog_admin", "/clienti"],
     ["finance_admin", "/impostazioni/utenti-e-ruoli"],
     ["sales_manager", "/catalogo/regole-di-ricarico"],
   ];
