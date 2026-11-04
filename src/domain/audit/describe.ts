@@ -1,4 +1,5 @@
 import { countryName } from "@/domain/company/company";
+import { subjectTypeLabels, type SubjectType } from "@/domain/customers/customer";
 import { roleLabels, type UserRole } from "@/server/auth/permissions";
 
 // Righe del registro delle modifiche in italiano semplice (decisioni del 3 novembre 2026):
@@ -25,7 +26,8 @@ export type AuditNames = {
   brands: Map<string, string>;
 };
 
-export type AuditChange = { label: string; before: string; after: string };
+// Senza «before» e «after» la riga dice solo che il campo è cambiato (dati personali dei clienti).
+export type AuditChange = { label: string; before?: string; after?: string };
 export type AuditLine = { actor: string; sentence: string; changes: AuditChange[] };
 
 export const maintenanceActor = "Procedura di manutenzione";
@@ -37,6 +39,7 @@ export const auditKinds = {
   brand: { label: "Brand", tables: ["brands"] },
   collegamenti: { label: "Collegamenti brand–società", tables: ["company_brands"] },
   profili: { label: "Profili e utenti", tables: ["profiles", "profile_companies"] },
+  clienti: { label: "Clienti", tables: ["customers"] },
 } as const;
 
 export type AuditKind = keyof typeof auditKinds;
@@ -71,12 +74,39 @@ function show(field: string, value: unknown): string {
   if (plain === null) return "(vuoto)";
   if (field === "iban") return maskIban(plain);
   if (field === "role") return roleLabels[plain as UserRole] ?? plain;
+  if (field === "subject_type") return subjectTypeLabels[plain as SubjectType] ?? plain;
   if (field === "address_country") {
     const name = countryName(plain);
     return name ? `${plain} (${name})` : plain;
   }
   return plain;
 }
+
+// Clienti: con il valore solo nome e tipo; degli altri campi solo il nome del campo cambiato
+// (decisione del 4 novembre 2026, dati personali).
+const customerFieldLabels: Record<string, string> = {
+  name: "Nome o ragione sociale",
+  subject_type: "Tipo di soggetto",
+  vat_number: "Partita IVA",
+  tax_code: "Codice fiscale",
+  foreign_tax_id: "Identificativo fiscale estero",
+  address_street: "Via e numero civico",
+  address_postal_code: "CAP",
+  address_city: "Comune",
+  address_province: "Provincia",
+  address_country: "Nazione",
+  sdi_code: "Codice destinatario",
+  pec: "PEC",
+  pa_office_code: "Codice univoco ufficio",
+  pa_office_name: "Nome dell'ufficio",
+  split_payment: "Split payment",
+  vat_regime: "Regime IVA",
+  vat_exemption_nature: "Natura dell'esenzione",
+  intent_declaration_number: "Numero della dichiarazione d'intento",
+  intent_declaration_date: "Data della dichiarazione d'intento",
+  group_company_id: "Società del gruppo",
+};
+const customerFieldsWithValue = new Set(["name", "subject_type"]);
 
 function changed(entry: AuditEntry, field: string): boolean {
   return (entry.oldData?.[field] ?? null) !== (entry.newData?.[field] ?? null);
@@ -85,13 +115,19 @@ function changed(entry: AuditEntry, field: string): boolean {
 // Solo i campi con un nome in italiano: quelli tecnici non compaiono mai.
 function visibleChanges(entry: AuditEntry): AuditChange[] {
   if (entry.action !== "update") return [];
-  return Object.keys(fieldLabels)
+  const customers = entry.table === "customers";
+  const labels = customers ? customerFieldLabels : fieldLabels;
+  return Object.keys(labels)
     .filter((field) => field in (entry.newData ?? {}) && changed(entry, field))
-    .map((field) => ({
-      label: fieldLabels[field]!,
-      before: show(field, entry.oldData?.[field]),
-      after: show(field, entry.newData?.[field]),
-    }));
+    .map((field) => {
+      const label = labels[field]!;
+      if (customers && !customerFieldsWithValue.has(field)) return { label };
+      return {
+        label,
+        before: show(field, entry.oldData?.[field]),
+        after: show(field, entry.newData?.[field]),
+      };
+    });
 }
 
 function value(entry: AuditEntry, field: string): unknown {
@@ -210,7 +246,17 @@ function describeProfileCompany(entry: AuditEntry, names: AuditNames): string {
     : `ha collegato ${person} ${companyRef(names, companyId, "a")}`;
 }
 
+function describeCustomer(entry: AuditEntry): string {
+  const subject = `cliente ${quoted(text(value(entry, "name")), "senza nome")}`;
+  if (entry.action === "insert") return `ha creato il ${subject}`;
+  if (entry.action === "delete") return `ha cancellato il ${subject}`;
+  const active = activeSentence(entry, subject, false);
+  if (active) return active;
+  return `ha modificato il ${subject}`;
+}
+
 const describers: Record<string, (entry: AuditEntry, names: AuditNames) => string> = {
+  customers: describeCustomer,
   companies: describeCompany,
   company_bank_accounts: describeBankAccount,
   brands: describeBrand,

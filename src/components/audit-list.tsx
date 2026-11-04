@@ -17,7 +17,14 @@ export function AuditList({ rows }: { rows: AuditRow[] }) {
             <ul className="mt-1 space-y-0.5 text-[13px] text-ink-muted">
               {row.changes.map((change) => (
                 <li key={change.label}>
-                  {change.label}: {change.before} → <span className="text-ink">{change.after}</span>
+                  {change.before === undefined ? (
+                    <>{change.label}: modificato</>
+                  ) : (
+                    <>
+                      {change.label}: {change.before} →{" "}
+                      <span className="text-ink">{change.after}</span>
+                    </>
+                  )}
                 </li>
               ))}
             </ul>

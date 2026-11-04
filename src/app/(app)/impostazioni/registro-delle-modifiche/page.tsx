@@ -27,6 +27,7 @@ function hrefWith(filters: AuditFilters, extra: Record<string, string>): string 
   if (filters.kind) query.set("tipo", filters.kind);
   if (filters.companyId) query.set("societa", filters.companyId);
   if (filters.brandId) query.set("brand", filters.brandId);
+  if (filters.customerId) query.set("cliente", filters.customerId);
   for (const [key, value] of Object.entries(extra)) query.set(key, value);
   const text = query.toString();
   return text ? `${auditPath}?${text}` : auditPath;
@@ -41,6 +42,14 @@ async function subjectName(filters: AuditFilters): Promise<string | null> {
       .eq("id", filters.companyId)
       .maybeSingle();
     return `la società «${data?.legal_name ?? "non più presente"}»`;
+  }
+  if (filters.customerId) {
+    const { data } = await supabase
+      .from("customers")
+      .select("name")
+      .eq("id", filters.customerId)
+      .maybeSingle();
+    return `il cliente «${data?.name ?? "non più presente"}»`;
   }
   if (filters.brandId) {
     const { data } = await supabase
@@ -75,6 +84,9 @@ export default async function AuditPage({ searchParams }: Props) {
             <input type="hidden" name="societa" value={filters.companyId} />
           ) : null}
           {filters.brandId ? <input type="hidden" name="brand" value={filters.brandId} /> : null}
+          {filters.customerId ? (
+            <input type="hidden" name="cliente" value={filters.customerId} />
+          ) : null}
           <label className="block text-[13px] text-ink-muted">
             Dal
             <input

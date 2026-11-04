@@ -66,3 +66,14 @@ export async function deleteTestCompanies(cleanup: Cleanup): Promise<void> {
   if (companies.error)
     throw new Error(`Società di prova non cancellate: ${companies.error.message}`);
 }
+
+export async function deleteTestCustomers(cleanup: Cleanup): Promise<void> {
+  const supabase = admin();
+  const { data, error } = await scope(supabase.from("customers").select("id"), "name", cleanup);
+  if (error) throw new Error(`Clienti di prova non letti: ${error.message}`);
+  const ids = data.map((customer) => customer.id);
+  if (ids.length === 0) return;
+  const customers = await supabase.from("customers").delete().in("id", ids);
+  if (customers.error)
+    throw new Error(`Clienti di prova non cancellati: ${customers.error.message}`);
+}

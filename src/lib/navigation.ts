@@ -24,7 +24,6 @@ export type NavSection = {
 const quotesLater = "I preventivi arriveranno con la Fase 2, dopo catalogo e motore dei prezzi.";
 const ordersLater = "Gli ordini arriveranno dopo i preventivi: un preventivo vinto diventa ordine.";
 const catalogLater = "Gli archivi del catalogo arriveranno con la Fase 1b.";
-const customersLater = "L'anagrafica clienti arriverà al termine della Fase 1.";
 const statsLater = "Le statistiche arriveranno quando ci saranno preventivi e ordini.";
 const controlLater =
   "Il controllo di gestione arriverà in una fase successiva, con ordini e incassi.";
@@ -210,6 +209,7 @@ export const navigation: NavSection[] = [
   {
     label: "Clienti",
     base: "/clienti",
+    requires: "customers.view",
     groups: [
       [
         {
@@ -217,14 +217,14 @@ export const navigation: NavSection[] = [
           href: "/clienti",
           title: "Clienti",
           subtitle: "L'anagrafica dei clienti.",
-          emptyState: `Nessun cliente inserito. ${customersLater}`,
+          emptyState: "Nessun cliente inserito.",
         },
         {
           label: "Nuovo cliente",
           href: "/clienti/nuovo",
           title: "Nuovo cliente",
           subtitle: "Basta il nome: gli altri dati si completano dopo.",
-          emptyState: customersLater,
+          emptyState: "Basta il nome o la ragione sociale.",
         },
       ],
       [
@@ -233,14 +233,15 @@ export const navigation: NavSection[] = [
           href: "/clienti/da-completare",
           title: "Clienti da completare",
           subtitle: "Clienti a cui mancano i dati per la fatturazione.",
-          emptyState: `Nessun cliente da completare. ${customersLater}`,
+          emptyState: "Nessun cliente da completare.",
         },
         {
           label: "Consulenti",
           href: "/clienti/consulenti",
           title: "Consulenti",
           subtitle: "I clienti assegnati a ciascun consulente.",
-          emptyState: `Nessun cliente assegnato. ${customersLater}`,
+          emptyState:
+            "Nessun cliente assegnato. Le assegnazioni dei clienti alle consulenti arriveranno più avanti: serviranno per attribuzione e statistiche.",
           requires: "consultants.view",
         },
       ],

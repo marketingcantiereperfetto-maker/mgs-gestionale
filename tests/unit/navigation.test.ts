@@ -76,8 +76,9 @@ describe("menu in alto", () => {
     expect(menu).not.toHaveProperty("Controllo di gestione");
   });
 
-  it("l'amministrazione cataloghi gestisce il catalogo, non le impostazioni", () => {
+  it("l'amministrazione cataloghi gestisce il catalogo, non le impostazioni né i clienti", () => {
     const menu = menuFor("catalog_admin");
+    expect(menu).not.toHaveProperty("Clienti");
     expect(menu.Catalogo).toContain("Materiali");
     expect(menu).not.toHaveProperty("Impostazioni");
     expect(menu).not.toHaveProperty("Controllo di gestione");
