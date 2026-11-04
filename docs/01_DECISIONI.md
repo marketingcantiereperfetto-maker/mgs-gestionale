@@ -129,6 +129,8 @@ Aggiornare a ogni traguardo. Una decisione cambiata non si cancella: si aggiunge
 - **Completezza in dashboard:** per ora calcolata sul server (parte C); da portare nel database quando i clienti saranno centinaia (backlog).
 - **Parte C** (dashboard e percorso guidato) dopo l'unione della B.
 
+- **Prove del database mai superate in silenzio (dopo due giri interrotti il 4 novembre 2026):** `npm run test:db` conta le prove dichiarate da ogni file e fallisce con un messaggio chiaro se ne girano meno, se manca un file o se manca il riepilogo finale, anche quando pg_prove dice PASS. Ogni file ha un tempo massimo (60 secondi; l'avvio 120): se non risponde, il comando si ferma e dice quale prova e dopo quanti secondi. Prove lente, senza risposta o mancanti si annotano con data e durata in `logs/prove-database.log`, sul proprio computer (escluso da git, senza indirizzi o password).
+
 ## Rischi noti
 - **Lettura della tabella clienti da parte delle consulenti (4 novembre 2026):** le consulenti hanno il permesso di leggere la tabella dei clienti nel database (serve alla scheda e all'elenco). Per questo «nessuna esportazione di massa per le consulenti» vale solo nell'interfaccia: chi usasse direttamente il collegamento al database con le proprie credenziali potrebbe leggere tutte le anagrafiche. Mitigazioni future: un limite di righe per ogni richiesta al database e la segnalazione delle letture insolite (per esempio molte schede lette in poco tempo).
 
