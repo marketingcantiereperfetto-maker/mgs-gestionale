@@ -30,12 +30,13 @@ export function Card({ title, children }: { title?: string; children: React.Reac
   );
 }
 
-type Tone = "info" | "success" | "warning";
+type Tone = "info" | "success" | "warning" | "neutral";
 
 const toneClass: Record<Tone, string> = {
   info: "bg-info-bg text-info",
   success: "bg-success-bg text-success",
   warning: "bg-warning-bg text-warning",
+  neutral: "bg-secondary text-ink",
 };
 
 export function Badge({ tone, children }: { tone: Tone; children: React.ReactNode }) {
