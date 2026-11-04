@@ -1,6 +1,7 @@
 // Ricerca nell'elenco clienti per nome, partita IVA, codice fiscale, PEC ed email dei referenti
 // attivi (decisioni del 4 novembre 2026). La ricerca vera la fa il database
-// (`search_customers`), con i suoi limiti: testo da 3 a 100 caratteri e 20 ricerche al minuto.
+// (`search_customers`), con i suoi limiti: testo da 3 a 100 caratteri, 20 ricerche al minuto e al
+// massimo 50 risultati (con l'avviso se ce ne sono altri).
 export const minSearchLength = 3;
 export const maxSearchLength = 100;
 
@@ -20,4 +21,5 @@ export const searchMessages = {
   long: `Il testo da cercare può avere al massimo ${maxSearchLength} caratteri.`,
   busy: "Troppe ricerche ravvicinate, riprova tra un minuto.",
   failed: "Ricerca non riuscita. Riprova.",
+  more: "Ci sono altri risultati: affina la ricerca.",
 } as const;

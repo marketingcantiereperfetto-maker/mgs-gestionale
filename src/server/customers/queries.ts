@@ -79,18 +79,37 @@ export async function listCustomers(): Promise<Customer[]> {
   return data.map(toCustomer);
 }
 
-export type CustomerSearch = { customers: Customer[]; error: string | null };
+export type CustomerSearch = { customers: Customer[]; error: string | null; hasMore: boolean };
 
-// Ricerca dal database, anche per email dei referenti attivi: restituisce solo righe dei
-// clienti, mai i referenti. Testo già controllato (3–100 caratteri) dal chiamante.
+// Ricerca dal database, anche per email dei referenti attivi. La funzione restituisce solo id,
+// nome, tipo, comune e stato, al massimo 50 risultati (con «has_more» se ce ne sono altri). Le
+// righe dei soli clienti trovati si leggono qui sul server per calcolare la completezza, come
+// fa l'elenco senza ricerca; alla pagina arrivano solo nome, tipo, comune e completezza.
+// Testo già controllato (3–100 caratteri) dal chiamante.
 export async function searchCustomers(term: string): Promise<CustomerSearch> {
   const supabase = await createSupabaseServerClient();
   const { data, error } = await supabase.rpc("search_customers", { search_text: term });
   if (error) {
     const message = error.code === "P0001" ? searchMessages.busy : searchMessages.failed;
-    return { customers: [], error: message };
+    return { customers: [], error: message, hasMore: false };
   }
-  return { customers: (data ?? []).map(toCustomer), error: null };
+  const found = data ?? [];
+  if (found.length === 0) return { customers: [], error: null, hasMore: false };
+  const rows = await supabase
+    .from("customers")
+    .select("*")
+    .in(
+      "id",
+      found.map((row) => row.id),
+    )
+    .order("name")
+    .order("id");
+  if (rows.error) return { customers: [], error: searchMessages.failed, hasMore: false };
+  return {
+    customers: rows.data.map(toCustomer),
+    error: null,
+    hasMore: found.some((row) => row.has_more),
+  };
 }
 
 export async function getCustomer(id: string): Promise<Customer | null> {

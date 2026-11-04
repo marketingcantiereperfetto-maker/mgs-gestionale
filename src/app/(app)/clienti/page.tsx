@@ -32,8 +32,8 @@ export default async function CustomersPage({ searchParams }: Props) {
     prepared.kind === "search"
       ? await searchCustomers(prepared.term)
       : prepared.kind === "none"
-        ? { customers: await listCustomers(), error: null }
-        : { customers: [], error: searchMessages[prepared.kind] };
+        ? { customers: await listCustomers(), error: null, hasMore: false }
+        : { customers: [], error: searchMessages[prepared.kind], hasMore: false };
   const customers = result.customers;
   const inactive = customers.filter((customer) => !customer.isActive).length;
 
@@ -73,6 +73,11 @@ export default async function CustomersPage({ searchParams }: Props) {
         {result.error ? (
           <div className="mt-3" data-testid="search-error">
             <Notice tone="warning">{result.error}</Notice>
+          </div>
+        ) : null}
+        {result.hasMore ? (
+          <div className="mt-3" data-testid="search-more">
+            <Notice tone="info">{searchMessages.more}</Notice>
           </div>
         ) : null}
       </Card>

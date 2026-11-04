@@ -277,6 +277,28 @@ test("registro e storico: referenti e indirizzi senza nomi, email, telefoni o vi
   expect(await history.innerText()).not.toMatch(/anna|bruno|\(02\)|Inventata 1|Magazzino/i);
 });
 
+test("più di 50 risultati: i primi 50 per nome e l'invito ad affinare la ricerca", async ({
+  page,
+}) => {
+  const batch = Array.from({ length: 52 }, (_, index) => ({
+    name: `${mine} Lotto ${String(index + 1).padStart(2, "0")}`,
+  }));
+  const { error } = await admin().from("customers").insert(batch);
+  expect(error).toBeNull();
+
+  await signIn(page, users.owner!);
+  await openReady(page, `/clienti?cerca=${encodeURIComponent(`${mine} Lotto`)}`);
+  await expect(page.getByTestId("customer-row")).toHaveCount(50);
+  await expect(page.getByTestId("customer-row").first()).toContainText(`${mine} Lotto 01`);
+  await expect(page.getByTestId("search-more")).toHaveText(
+    "Ci sono altri risultati: affina la ricerca.",
+  );
+
+  await openReady(page, `/clienti?cerca=${encodeURIComponent(`${mine} Lotto 0`)}`);
+  await expect(page.getByTestId("customer-row")).toHaveCount(9);
+  await expect(page.getByTestId("search-more")).toHaveCount(0);
+});
+
 test("oltre il limite delle ricerche nell'elenco: messaggio gentile", async ({ page }) => {
   test.setTimeout(90_000);
   await signIn(page, users.busy!);

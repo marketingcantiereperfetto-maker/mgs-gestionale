@@ -497,40 +497,13 @@ export type Database = {
       search_customers: {
         Args: { search_text: string };
         Returns: {
-          address_city: string | null;
-          address_country: string | null;
-          address_postal_code: string | null;
-          address_province: string | null;
-          address_street: string | null;
-          created_at: string;
-          created_by: string | null;
-          creation_key: string | null;
-          foreign_tax_id: string | null;
-          group_company_id: string | null;
+          city: string;
+          has_more: boolean;
           id: string;
-          intent_declaration_date: string | null;
-          intent_declaration_number: string | null;
           is_active: boolean;
           name: string;
-          pa_office_code: string | null;
-          pa_office_name: string | null;
-          pec: string | null;
-          sdi_code: string | null;
-          split_payment: boolean | null;
-          subject_type: Database["public"]["Enums"]["customer_subject_type"] | null;
-          tax_code: string | null;
-          updated_at: string;
-          updated_by: string | null;
-          vat_exemption_nature: string | null;
-          vat_number: string | null;
-          vat_regime: Database["public"]["Enums"]["vat_regime"] | null;
+          subject_type: Database["public"]["Enums"]["customer_subject_type"];
         }[];
-        SetofOptions: {
-          from: "*";
-          to: "customers";
-          isOneToOne: false;
-          isSetofReturn: true;
-        };
       };
       set_bank_account_active: {
         Args: { account_id: string; active: boolean };

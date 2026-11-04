@@ -125,8 +125,12 @@ Aggiornare a ogni traguardo. Una decisione cambiata non si cancella: si aggiunge
 - **Registro senza dati personali (modifica del titolare):** per i referenti solo id, id del cliente, stato attivo e i nomi dei campi cambiati, **nemmeno il nome della persona**; per gli indirizzi solo id, id del cliente, stato e nomi dei campi (nemmeno la descrizione). Il registro in italiano dice «ha aggiunto un referente del cliente «X»» con i soli nomi dei campi; lo storico della scheda del cliente include referenti e indirizzi.
 - **Dove si vedono:** solo nella scheda del singolo cliente, mai nell'elenco. I moduli di modifica si aprono a richiesta.
 - **Ricerca nell'elenco clienti:** passa al database (`search_customers`): nome, partita IVA, codice fiscale, PEC ed email dei referenti **attivi**, anche parti dell'indirizzo. Testo da 3 a 100 caratteri (prima 2–80); 20 ricerche al minuto per utente, contate a parte da quelle dei clienti simili; oltre il limite «Troppe ricerche ravvicinate, riprova tra un minuto». I risultati mostrano sempre solo nome, tipo, comune e completezza.
+- **Risultati della ricerca (correzione del titolare sulla richiesta n. 14):** la funzione del database restituisce solo id, nome, tipo di soggetto, comune e stato attivo, mai la riga intera del cliente; al massimo **50 risultati** ordinati per nome; se ce ne sono di più compare «Ci sono altri risultati: affina la ricerca». La completezza dei clienti trovati si calcola sul server, come nell'elenco senza ricerca; alla pagina arrivano solo nome, tipo, comune e completezza.
 - **Completezza in dashboard:** per ora calcolata sul server (parte C); da portare nel database quando i clienti saranno centinaia (backlog).
 - **Parte C** (dashboard e percorso guidato) dopo l'unione della B.
+
+## Rischi noti
+- **Lettura della tabella clienti da parte delle consulenti (4 novembre 2026):** le consulenti hanno il permesso di leggere la tabella dei clienti nel database (serve alla scheda e all'elenco). Per questo «nessuna esportazione di massa per le consulenti» vale solo nell'interfaccia: chi usasse direttamente il collegamento al database con le proprie credenziali potrebbe leggere tutte le anagrafiche. Mitigazioni future: un limite di righe per ogni richiesta al database e la segnalazione delle letture insolite (per esempio molte schede lette in poco tempo).
 
 ## Aperte (da decidere prima della funzione relativa)
 - Arrotondamenti: prima del motore dei prezzi.
