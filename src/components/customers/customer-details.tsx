@@ -109,6 +109,39 @@ function CountryField({
   );
 }
 
+// Apri e chiudi: il contenuto (il modulo) esiste solo quando è aperto, così i suoi campi non
+// si confondono con gli altri della scheda.
+function Disclosure({
+  label,
+  small,
+  children,
+}: {
+  label: string;
+  small?: boolean;
+  children: React.ReactNode;
+}) {
+  const [open, setOpen] = useState(false);
+  const panelId = useId();
+  return (
+    <div className={small ? "mt-2" : undefined}>
+      <button
+        type="button"
+        aria-expanded={open}
+        aria-controls={panelId}
+        onClick={() => setOpen((value) => !value)}
+        className={small ? textButton : "button button-text rounded text-[14px] font-medium"}
+      >
+        {open ? "Chiudi" : label}
+      </button>
+      {open ? (
+        <div id={panelId} className="mt-3">
+          {children}
+        </div>
+      ) : null}
+    </div>
+  );
+}
+
 function SmallAction({
   action,
   hidden,
@@ -258,12 +291,9 @@ function ContactRow({
         ) : null}
       </div>
       {contact.isActive ? (
-        <details className="mt-2">
-          <summary className="cursor-pointer text-[13px] font-medium text-action">Modifica</summary>
-          <div className="mt-3">
-            <ContactForm customerId={customerId} contact={contact} />
-          </div>
-        </details>
+        <Disclosure label="Modifica" small>
+          <ContactForm customerId={customerId} contact={contact} />
+        </Disclosure>
       ) : null}
     </li>
   );
@@ -319,14 +349,11 @@ export function CustomerContacts({
       <InactiveList count={inactive.length}>{inactive.map(row)}</InactiveList>
       <ActionFeedback state={primaryState} />
       <ActionFeedback state={activeState} />
-      <details className="mt-4 rounded-[10px] border border-line/70 p-3">
-        <summary className="cursor-pointer text-[14px] font-medium text-ink">
-          Aggiungi un referente
-        </summary>
-        <div className="mt-3">
+      <div className="mt-4 rounded-[10px] border border-line/70 p-3">
+        <Disclosure label="Aggiungi un referente">
           <ContactForm customerId={customerId} contact={null} />
-        </div>
-      </details>
+        </Disclosure>
+      </div>
     </div>
   );
 }
@@ -476,12 +503,9 @@ function AddressRow({
         ) : null}
       </div>
       {address.isActive ? (
-        <details className="mt-2">
-          <summary className="cursor-pointer text-[13px] font-medium text-action">Modifica</summary>
-          <div className="mt-3">
-            <AddressForm customerId={customerId} address={address} />
-          </div>
-        </details>
+        <Disclosure label="Modifica" small>
+          <AddressForm customerId={customerId} address={address} />
+        </Disclosure>
       ) : null}
     </li>
   );
@@ -525,14 +549,11 @@ export function CustomerAddresses({
       <InactiveList count={inactive.length}>{inactive.map(row)}</InactiveList>
       <ActionFeedback state={defaultState} />
       <ActionFeedback state={activeState} />
-      <details className="mt-4 rounded-[10px] border border-line/70 p-3">
-        <summary className="cursor-pointer text-[14px] font-medium text-ink">
-          Aggiungi un indirizzo di consegna
-        </summary>
-        <div className="mt-3">
+      <div className="mt-4 rounded-[10px] border border-line/70 p-3">
+        <Disclosure label="Aggiungi un indirizzo di consegna">
           <AddressForm customerId={customerId} address={null} />
-        </div>
-      </details>
+        </Disclosure>
+      </div>
     </div>
   );
 }
