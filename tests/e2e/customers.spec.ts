@@ -20,7 +20,7 @@ const customerName = `${mine} Cliente Srl`;
 const privateName = `${mine} Privato`;
 const groupCompany = `${mine} Gruppo Srl`;
 const users: Partial<
-  Record<"owner" | "consultant" | "catalog" | "finance" | "manager", TemporaryUser>
+  Record<"owner" | "consultant" | "catalog" | "finance" | "manager" | "busy", TemporaryUser>
 > = {};
 let customerUrl = "";
 let privateUrl = "";
@@ -32,6 +32,8 @@ test.beforeAll(async () => {
   users.catalog = await createTemporaryUser("catalog_admin");
   users.finance = await createTemporaryUser("finance_admin");
   users.manager = await createTemporaryUser("sales_manager");
+  // Consulente usata solo per superare il limite delle ricerche (resta bloccata per un minuto).
+  users.busy = await createTemporaryUser("sales_consultant");
   const { data, error } = await admin()
     .from("companies")
     .insert({ legal_name: groupCompany })
@@ -430,4 +432,30 @@ test("la pagina «Nuovo cliente» usa lo stesso modulo", async ({ page }) => {
   await expect(page.getByRole("heading", { level: 1, name })).toBeVisible();
   const { data } = await admin().from("customers").select("id").eq("name", name);
   expect(data).toHaveLength(1);
+});
+
+test("oltre il limite delle ricerche: messaggio gentile, il modulo funziona comunque", async ({
+  page,
+}) => {
+  test.setTimeout(90_000);
+  await signIn(page, users.busy!);
+  await openDialog(page);
+  const name = dialog(page).getByLabel("Nome o ragione sociale");
+  const notice = dialog(page).getByTestId("similar-error");
+
+  // Ogni testo diverso, dopo la pausa di scrittura, è una ricerca: la 21ª supera il limite.
+  for (let search = 1; search <= 21; search++) {
+    const response = page.waitForResponse(
+      (answer) => answer.request().method() === "POST" && answer.url().includes("/clienti"),
+    );
+    await name.fill(`${mine} ricerca ${search}`);
+    await response;
+  }
+  await expect(notice).toHaveText("Troppe ricerche ravvicinate, riprova tra un minuto.");
+
+  // Il modulo non è bloccato: il cliente si crea lo stesso.
+  const created = `${mine} Creato dopo il limite`;
+  await name.fill(created);
+  await dialog(page).getByRole("button", { name: "Crea cliente" }).click();
+  await expect(page.getByRole("heading", { level: 1, name: created })).toBeVisible();
 });

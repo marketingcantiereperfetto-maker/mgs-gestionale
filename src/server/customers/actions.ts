@@ -259,7 +259,7 @@ export async function findSimilarCustomers(input: {
       results: [],
       error:
         error.code === "P0001"
-          ? "Troppe ricerche ravvicinate: i clienti simili si aggiorneranno tra un minuto."
+          ? "Troppe ricerche ravvicinate, riprova tra un minuto."
           : "Ricerca dei clienti simili non riuscita.",
     };
   }

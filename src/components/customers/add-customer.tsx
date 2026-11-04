@@ -51,7 +51,15 @@ function SimilarCustomers({
 
   return (
     <div aria-live="polite" data-testid="similar-customers">
-      {error ? <p className="text-[13px] text-warning">{error}</p> : null}
+      {/* Un avviso, non un blocco: il cliente si può creare comunque. */}
+      {error ? (
+        <p
+          className="rounded-lg bg-warning-bg px-3 py-2 text-[13px] text-warning"
+          data-testid="similar-error"
+        >
+          {error}
+        </p>
+      ) : null}
       {results.length > 0 ? (
         <div className="rounded-[10px] bg-info-bg p-3 text-info">
           <p className="text-[13px] font-medium">Clienti simili già presenti:</p>

@@ -11,3 +11,25 @@ describe("i test con la chiave di amministrazione lavorano solo sul progetto di 
     expect(isTestProject(undefined)).toBe(false);
   });
 });
+
+describe("indirizzo diretto del database: riferimento del progetto senza rete", () => {
+  it("riconosce il riferimento negli indirizzi diretti e del pooler", async () => {
+    const { projectRefFromDbUrl } = await import("@/lib/supabase/test-project");
+    expect(
+      projectRefFromDbUrl(
+        "postgresql://postgres:x@db.rozukexrurbadsiznmby.supabase.co:5432/postgres",
+      ),
+    ).toBe("rozukexrurbadsiznmby");
+    expect(
+      projectRefFromDbUrl(
+        "postgresql://postgres.rozukexrurbadsiznmby:x@aws-1-eu-west-1.pooler.supabase.com:5432/postgres",
+      ),
+    ).toBe("rozukexrurbadsiznmby");
+    expect(
+      projectRefFromDbUrl("postgresql://postgres:x@db.altroprogetto.supabase.co:5432/postgres"),
+    ).toBe("altroprogetto");
+    expect(projectRefFromDbUrl("postgresql://postgres:x@localhost:54322/postgres")).toBeNull();
+    expect(projectRefFromDbUrl("https://rozukexrurbadsiznmby.supabase.co")).toBeNull();
+    expect(projectRefFromDbUrl(undefined)).toBeNull();
+  });
+});
