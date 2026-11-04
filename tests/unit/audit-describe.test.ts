@@ -13,6 +13,7 @@ const names: AuditNames = {
   ]),
   companies: new Map([[company, "Società Inventata Srl"]]),
   brands: new Map([[brand, "Brand Inventato"]]),
+  customers: new Map([["00000000-0000-4000-8000-0000000000e1", "Cliente Inventato"]]),
 };
 
 function entry(overrides: Partial<AuditEntry>): AuditEntry {
@@ -160,7 +161,12 @@ describe("registro in italiano semplice", () => {
   });
 
   it("dati non più presenti e autori sconosciuti hanno una frase chiara", () => {
-    const empty: AuditNames = { people: new Map(), companies: new Map(), brands: new Map() };
+    const empty: AuditNames = {
+      people: new Map(),
+      companies: new Map(),
+      brands: new Map(),
+      customers: new Map(),
+    };
     const line = describeEntry(
       entry({ table: "company_brands", newData: { company_id: company, brand_id: brand } }),
       empty,
@@ -177,7 +183,12 @@ describe("registro dei clienti: dati personali senza valori", () => {
   const base = { id: customer, name: "Cliente Inventato", subject_type: null, is_active: true };
 
   it("creazione, disattivazione e modifiche con solo nome e tipo in chiaro", () => {
-    const names: AuditNames = { people: new Map(), companies: new Map(), brands: new Map() };
+    const names: AuditNames = {
+      people: new Map(),
+      companies: new Map(),
+      brands: new Map(),
+      customers: new Map(),
+    };
     const make = (overrides: Partial<AuditEntry>): AuditEntry => ({
       id: 1,
       occurredAt: "2026-11-04T10:00:00Z",
@@ -228,7 +239,12 @@ describe("registro dei clienti: dati personali senza valori", () => {
 describe("registro dei clienti ridotto alla scrittura", () => {
   it("dalle righe con soli nomi dei campi: nome e tipo con valore, gli altri solo nominati", () => {
     const customer = "00000000-0000-4000-8000-0000000000d2";
-    const names: AuditNames = { people: new Map(), companies: new Map(), brands: new Map() };
+    const names: AuditNames = {
+      people: new Map(),
+      companies: new Map(),
+      brands: new Map(),
+      customers: new Map(),
+    };
     const line = describeEntry(
       {
         id: 2,
@@ -256,5 +272,81 @@ describe("registro dei clienti ridotto alla scrittura", () => {
       { label: "PEC" },
       { label: "Codice fiscale" },
     ]);
+  });
+
+  it("referenti e indirizzi: solo il cliente e i nomi dei campi, mai i valori", () => {
+    const customerId = "00000000-0000-4000-8000-0000000000e1";
+    const contact = "00000000-0000-4000-8000-0000000000e2";
+    const base = { table: "customer_contacts", recordId: contact };
+    expect(
+      describeEntry(
+        entry({
+          ...base,
+          newData: {
+            id: contact,
+            customer_id: customerId,
+            is_active: true,
+            changed_fields: ["name"],
+          },
+        }),
+        names,
+      ).sentence,
+    ).toBe("ha aggiunto un referente del cliente «Cliente Inventato»");
+
+    const edited = describeEntry(
+      entry({
+        ...base,
+        action: "update",
+        oldData: { id: contact, customer_id: customerId, is_active: true },
+        newData: {
+          id: contact,
+          customer_id: customerId,
+          is_active: true,
+          changed_fields: ["email", "phone"],
+        },
+      }),
+      names,
+    );
+    expect(edited.sentence).toBe("ha modificato un referente del cliente «Cliente Inventato»");
+    expect(edited.changes).toEqual([{ label: "Email" }, { label: "Telefono" }]);
+
+    expect(
+      describeEntry(
+        entry({
+          ...base,
+          action: "update",
+          oldData: { id: contact, customer_id: customerId, is_active: true },
+          newData: {
+            id: contact,
+            customer_id: customerId,
+            is_active: false,
+            changed_fields: ["is_primary"],
+          },
+        }),
+        names,
+      ).sentence,
+    ).toBe("ha disattivato un referente del cliente «Cliente Inventato»");
+
+    expect(
+      describeEntry(
+        entry({
+          table: "customer_delivery_addresses",
+          recordId: contact,
+          action: "update",
+          oldData: {
+            id: contact,
+            customer_id: "00000000-0000-4000-8000-0000000000ff",
+            is_active: true,
+          },
+          newData: {
+            id: contact,
+            customer_id: "00000000-0000-4000-8000-0000000000ff",
+            is_active: true,
+            changed_fields: ["is_default"],
+          },
+        }),
+        names,
+      ).sentence,
+    ).toBe("ha cambiato l'indirizzo di consegna predefinito di un cliente non più presente");
   });
 });

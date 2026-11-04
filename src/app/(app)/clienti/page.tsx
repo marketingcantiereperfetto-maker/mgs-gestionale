@@ -3,11 +3,11 @@ import Link from "next/link";
 import { CustomersAddButton } from "@/components/customers/customers-add";
 import { CustomersList } from "@/components/customers-list";
 import { can } from "@/server/auth/permissions";
-import { Card, PageHeader, fieldClass, focusRing, primaryButton } from "@/components/ui";
-import { maxSearchLength } from "@/domain/customers/search";
+import { Card, Notice, PageHeader, fieldClass, focusRing, primaryButton } from "@/components/ui";
+import { maxSearchLength, prepareCustomerSearch, searchMessages } from "@/domain/customers/search";
 import { customersPath } from "@/lib/customer-paths";
 import { requirePage } from "@/server/auth/page-access";
-import { listCustomers } from "@/server/customers/queries";
+import { listCustomers, searchCustomers, type CustomerSearch } from "@/server/customers/queries";
 
 export const metadata: Metadata = { title: "Clienti · Gestionale MGS Group" };
 
@@ -26,7 +26,15 @@ export default async function CustomersPage({ searchParams }: Props) {
   const params = await searchParams;
   const showInactive = params.disattivati === "1";
   const search = (params.cerca ?? "").trim().slice(0, maxSearchLength);
-  const customers = await listCustomers(search);
+  const prepared = prepareCustomerSearch(search);
+  // Testo troppo corto o troppo lungo: nessuna ricerca, un avviso e nessun risultato.
+  const result: CustomerSearch =
+    prepared.kind === "search"
+      ? await searchCustomers(prepared.term)
+      : prepared.kind === "none"
+        ? { customers: await listCustomers(), error: null }
+        : { customers: [], error: searchMessages[prepared.kind] };
+  const customers = result.customers;
   const inactive = customers.filter((customer) => !customer.isActive).length;
 
   return (
@@ -41,7 +49,7 @@ export default async function CustomersPage({ searchParams }: Props) {
         >
           {showInactive ? <input type="hidden" name="disattivati" value="1" /> : null}
           <label className="block min-w-64 flex-1 text-[13px] text-ink-muted">
-            Cerca per nome, partita IVA, codice fiscale o PEC
+            Cerca per nome, partita IVA, codice fiscale, PEC o email di un referente
             <input
               type="search"
               name="cerca"
@@ -62,6 +70,11 @@ export default async function CustomersPage({ searchParams }: Props) {
             </Link>
           ) : null}
         </form>
+        {result.error ? (
+          <div className="mt-3" data-testid="search-error">
+            <Notice tone="warning">{result.error}</Notice>
+          </div>
+        ) : null}
       </Card>
       <CustomersList
         addButton={<CustomersAddButton canReactivate={can(user, "customers.deactivate")} />}

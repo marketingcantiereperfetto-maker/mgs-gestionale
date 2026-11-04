@@ -24,6 +24,7 @@ export type AuditNames = {
   people: Map<string, string>;
   companies: Map<string, string>;
   brands: Map<string, string>;
+  customers: Map<string, string>;
 };
 
 // Senza «before» e «after» la riga dice solo che il campo è cambiato (dati personali dei clienti).
@@ -40,6 +41,8 @@ export const auditKinds = {
   collegamenti: { label: "Collegamenti brand–società", tables: ["company_brands"] },
   profili: { label: "Profili e utenti", tables: ["profiles", "profile_companies"] },
   clienti: { label: "Clienti", tables: ["customers"] },
+  referenti: { label: "Referenti dei clienti", tables: ["customer_contacts"] },
+  indirizzi: { label: "Indirizzi di consegna", tables: ["customer_delivery_addresses"] },
 } as const;
 
 export type AuditKind = keyof typeof auditKinds;
@@ -134,10 +137,41 @@ function customerChanges(entry: AuditEntry): AuditChange[] {
   return [...withValue, ...withoutValue];
 }
 
+// Referenti e indirizzi: il registro ha solo i nomi dei campi cambiati, mai i valori
+// (decisione del 4 novembre 2026). Principale e predefinito hanno la loro frase.
+const detailFieldLabels: Record<string, string> = {
+  name: "Nome",
+  role: "Ruolo",
+  email: "Email",
+  phone: "Telefono",
+  description: "Descrizione",
+  street: "Via e numero civico",
+  postal_code: "CAP",
+  city: "Comune",
+  province: "Provincia",
+  country: "Paese",
+};
+
+function listedFields(entry: AuditEntry): string[] {
+  const listed = (entry.newData ?? entry.oldData)?.changed_fields;
+  return Array.isArray(listed)
+    ? listed.filter((field): field is string => typeof field === "string")
+    : [];
+}
+
+function detailChanges(entry: AuditEntry): AuditChange[] {
+  return listedFields(entry)
+    .filter((field) => field in detailFieldLabels)
+    .map((field) => ({ label: detailFieldLabels[field]! }));
+}
+
+const detailTables = new Set(["customer_contacts", "customer_delivery_addresses"]);
+
 // Solo i campi con un nome in italiano: quelli tecnici non compaiono mai.
 function visibleChanges(entry: AuditEntry): AuditChange[] {
   if (entry.action !== "update") return [];
   if (entry.table === "customers") return customerChanges(entry);
+  if (detailTables.has(entry.table)) return detailChanges(entry);
   return Object.keys(fieldLabels)
     .filter((field) => field in (entry.newData ?? {}) && changed(entry, field))
     .map((field) => ({
@@ -272,8 +306,34 @@ function describeCustomer(entry: AuditEntry): string {
   return `ha modificato il ${subject}`;
 }
 
+function customerRef(names: AuditNames, id: unknown): string {
+  const known = typeof id === "string" ? names.customers.get(id) : undefined;
+  return known ? `del cliente «${known}»` : "di un cliente non più presente";
+}
+
+// Né il nome del referente né la descrizione dell'indirizzo: nel registro non ci sono.
+function describeDetail(entry: AuditEntry, names: AuditNames, kind: "contact" | "address") {
+  const what = kind === "contact" ? "un referente" : "un indirizzo di consegna";
+  const owner = customerRef(names, value(entry, "customer_id"));
+  if (entry.action === "insert") return `ha aggiunto ${what} ${owner}`;
+  if (entry.action === "delete") return `ha cancellato ${what} ${owner}`;
+  if (changed(entry, "is_active")) {
+    return `ha ${entry.newData?.is_active ? "riattivato" : "disattivato"} ${what} ${owner}`;
+  }
+  const fields = listedFields(entry);
+  const flag = kind === "contact" ? "is_primary" : "is_default";
+  if (fields.length === 1 && fields[0] === flag) {
+    return kind === "contact"
+      ? `ha cambiato il referente principale ${owner}`
+      : `ha cambiato l'indirizzo di consegna predefinito ${owner}`;
+  }
+  return `ha modificato ${what} ${owner}`;
+}
+
 const describers: Record<string, (entry: AuditEntry, names: AuditNames) => string> = {
   customers: describeCustomer,
+  customer_contacts: (entry, names) => describeDetail(entry, names, "contact"),
+  customer_delivery_addresses: (entry, names) => describeDetail(entry, names, "address"),
   companies: describeCompany,
   company_bank_accounts: describeBankAccount,
   brands: describeBrand,

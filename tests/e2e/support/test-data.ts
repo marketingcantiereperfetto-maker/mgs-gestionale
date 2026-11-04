@@ -73,6 +73,16 @@ export async function deleteTestCustomers(cleanup: Cleanup): Promise<void> {
   if (error) throw new Error(`Clienti di prova non letti: ${error.message}`);
   const ids = data.map((customer) => customer.id);
   if (ids.length === 0) return;
+  // Prima referenti e indirizzi di consegna, che puntano al cliente.
+  const contacts = await supabase.from("customer_contacts").delete().in("customer_id", ids);
+  if (contacts.error)
+    throw new Error(`Referenti di prova non cancellati: ${contacts.error.message}`);
+  const addresses = await supabase
+    .from("customer_delivery_addresses")
+    .delete()
+    .in("customer_id", ids);
+  if (addresses.error)
+    throw new Error(`Indirizzi di prova non cancellati: ${addresses.error.message}`);
   const customers = await supabase.from("customers").delete().in("id", ids);
   if (customers.error)
     throw new Error(`Clienti di prova non cancellati: ${customers.error.message}`);
