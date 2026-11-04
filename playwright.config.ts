@@ -22,7 +22,7 @@ export default defineConfig({
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
-      testIgnore: /setup-guide\.spec\.ts/,
+      testIgnore: /(setup-guide|dashboard-customers)\.spec\.ts/,
     },
     // Il percorso guidato guarda tutti i dati del database: la sua prova gira da sola, dopo
     // tutte le altre, così nessuna prova in parallelo ne falsa lo stato.
@@ -31,6 +31,13 @@ export default defineConfig({
       use: { ...devices["Desktop Chrome"] },
       testMatch: /setup-guide\.spec\.ts/,
       dependencies: ["chromium"],
+    },
+    // Il riquadro dei clienti da completare conta tutti i clienti attivi: gira da solo, dopo.
+    {
+      name: "riquadro-clienti",
+      use: { ...devices["Desktop Chrome"] },
+      testMatch: /dashboard-customers\.spec\.ts/,
+      dependencies: ["percorso-guidato"],
     },
   ],
   webServer: {

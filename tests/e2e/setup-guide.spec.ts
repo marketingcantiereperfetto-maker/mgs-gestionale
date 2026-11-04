@@ -22,6 +22,12 @@ const brandName = `${mine} Brand percorso`;
 let owner: TemporaryUser;
 let consultant: TemporaryUser;
 let realData = false;
+// Clienti attivi già presenti (per esempio il «CLIENTE PROVA» del titolare, che non si tocca):
+// in quel caso il passo dei clienti è già «Fatto». Il caso «Da fare» lo coprono i test di unità.
+let hasActiveCustomers = false;
+const customersStep = 7;
+const fullMessage =
+  "La configurazione di società, conti, brand e clienti è completa. Gli altri passi arriveranno con le prossime funzioni.";
 
 test.beforeAll(async () => {
   test.setTimeout(120_000);
@@ -39,6 +45,11 @@ test.beforeAll(async () => {
   ]);
   realData = (companies.count ?? 0) + (brands.count ?? 0) > 0;
   if (realData) return;
+  const customers = await admin()
+    .from("customers")
+    .select("id", { count: "exact", head: true })
+    .eq("is_active", true);
+  hasActiveCustomers = (customers.count ?? 0) > 0;
   // Gira da solo: si possono togliere tutti i resti di prove precedenti.
   await deleteTestBrands({ prefix: testPrefix });
   await deleteTestCompanies({ prefix: testPrefix });
@@ -86,15 +97,26 @@ test("archivio vuoto: quattro passi da fare, gli altri arriveranno, senza pulsan
   // Lo stato è scritto a parole, non solo a colori.
   await expect(step(page, 0)).toContainText("Da fare");
   for (let index = 4; index < 12; index++) {
+    if (index === customersStep) continue;
     await expect(step(page, index)).toContainText("Arriverà");
     await expect(step(page, index).getByRole("link")).toHaveCount(0);
+  }
+  // Il passo dei clienti è calcolato sui dati; l'importazione resta «arriverà».
+  const customers = step(page, customersStep);
+  await expect(customers).toContainText("Creare o importare le anagrafiche clienti");
+  await expect(customers).toContainText("L'importazione dal vecchio gestionale arriverà.");
+  if (hasActiveCustomers) {
+    await expect(customers).toHaveAttribute("data-status", "done");
+    await expect(customers).toContainText("Fatto");
+    await expect(customers.getByRole("link")).toHaveCount(0);
+  } else {
+    await expect(customers).toHaveAttribute("data-status", "todo");
+    await expect(customers.getByRole("link", { name: "Aggiungi cliente" })).toBeVisible();
   }
   await expect(step(page, 5)).toContainText("Il titolare è già attivo");
   await expect(step(page, 1)).toContainText("Prima crea una società.");
   await expect(step(page, 1).getByRole("link")).toHaveCount(0);
-  await expect(page.getByText(/configurazione di società, conti e brand è completa/)).toHaveCount(
-    0,
-  );
+  await expect(page.getByText(/è completa/)).toHaveCount(0);
 
   // Il primo pulsante si raggiunge da tastiera.
   const add = step(page, 0).getByRole("link", { name: "Aggiungi società" });
@@ -171,11 +193,8 @@ test("da «da fare» a «fatto», un passo alla volta", async ({ page }) => {
 
   await dashboard(page);
   await expectStatuses(page, ["done", "done", "done", "done"]);
-  await expect(
-    page.getByText(
-      "La configurazione di società, conti e brand è completa. Gli altri passi arriveranno con le prossime funzioni.",
-    ),
-  ).toBeVisible();
+  // Completa solo se c'è anche almeno un cliente attivo.
+  await expect(page.getByText(fullMessage)).toHaveCount(hasActiveCustomers ? 1 : 0);
   for (let index = 0; index < 4; index++) {
     await expect(step(page, index).getByRole("link")).toHaveCount(0);
   }

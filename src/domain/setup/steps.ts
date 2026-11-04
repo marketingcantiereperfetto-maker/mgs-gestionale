@@ -5,6 +5,7 @@ import {
   newBrandPath,
   newCompanyPath,
 } from "@/lib/company-paths";
+import { newCustomerPath } from "@/lib/customer-paths";
 
 // Percorso guidato di configurazione (cap. 5.1, decisioni del 3 novembre 2026). Lo stato di
 // ogni passo viene dai dati veri; i passi delle funzioni che non esistono ancora sono
@@ -23,6 +24,8 @@ export type SetupFacts = {
   linkedBrands: number;
   unlinkedBrand: Named | null;
   withoutBrand: Sample<Named>;
+  // Conteggio fatto dal database, senza leggere le righe.
+  activeCustomers: number;
 };
 
 export type StepStatus = "done" | "todo" | "later";
@@ -117,15 +120,30 @@ function brandStep(facts: SetupFacts): SetupStep {
   };
 }
 
-// Passi del §5.1 che dipendono da funzioni non ancora disponibili.
-const laterSteps: { title: string; details?: string[] }[] = [
+// Clienti (clienti C, decisioni del 4 novembre 2026): fatto con almeno un cliente attivo;
+// l'importazione dal vecchio gestionale (§16.6) arriverà.
+function customersStep(facts: SetupFacts): SetupStep {
+  const done = facts.activeCustomers > 0;
+  return {
+    title: "Creare o importare le anagrafiche clienti",
+    status: done ? "done" : "todo",
+    details: done
+      ? ["L'importazione dal vecchio gestionale arriverà."]
+      : ["Per iniziare basta il nome.", "L'importazione dal vecchio gestionale arriverà."],
+    action: done ? null : { label: "Aggiungi cliente", href: newCustomerPath },
+  };
+}
+
+// Passi del §5.1 nel loro ordine: quelli delle funzioni non ancora disponibili «arriverà»;
+// «customers» è il passo dei clienti, calcolato sui dati.
+const laterSteps: ({ title: string; details?: string[] } | "customers")[] = [
   { title: "Configurare reparti e macchinari" },
   {
     title: "Creare utenti, ruoli e responsabilità",
     details: ["Il titolare è già attivo; l'invito degli altri utenti arriverà."],
   },
   { title: "Inserire metodi e condizioni di pagamento, aliquote IVA e unità di misura" },
-  { title: "Creare o importare le anagrafiche clienti" },
+  "customers",
   { title: "Configurare fornitori, categorie, materiali e lavorazioni, poi i Wizard" },
   { title: "Definire regole di ricarico, scaglioni, soglie di sicurezza e regole commerciali" },
   { title: "Verifiche di completezza, simulazioni e pubblicazione degli articoli" },
@@ -141,21 +159,21 @@ export function setupGuide(facts: SetupFacts): SetupGuide {
     accountStep(facts),
     brandStep(facts),
   ];
-  const later: SetupStep[] = laterSteps.map((step) => ({
-    title: step.title,
-    status: "later",
-    details: step.details ?? [],
-    action: null,
-  }));
+  const customers = customersStep(facts);
+  const later: SetupStep[] = laterSteps.map((step) =>
+    step === "customers"
+      ? customers
+      : { title: step.title, status: "later", details: step.details ?? [], action: null },
+  );
   return {
     steps: [...current, ...later],
-    complete: current.every((step) => step.status === "done"),
+    complete: [...current, customers].every((step) => step.status === "done"),
   };
 }
 
 export const notOwnerMessage = "La configurazione iniziale la cura il titolare.";
 export const completeMessage =
-  "La configurazione di società, conti e brand è completa. Gli altri passi arriveranno con le prossime funzioni.";
+  "La configurazione di società, conti, brand e clienti è completa. Gli altri passi arriveranno con le prossime funzioni.";
 
 export type DashboardSetup =
   { kind: "guide"; guide: SetupGuide } | { kind: "message"; text: string };

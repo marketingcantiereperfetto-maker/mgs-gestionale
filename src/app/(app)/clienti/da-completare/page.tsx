@@ -12,16 +12,19 @@ export const metadata: Metadata = { title: "Clienti da completare · Gestionale 
 
 export default async function IncompleteCustomersPage() {
   const { page, user } = await requirePage(incompleteCustomersPath);
-  const customers = (await listCustomers()).filter(
-    (customer) => customer.isActive && !customerCompleteness(customer).complete,
-  );
+  const active = (await listCustomers()).filter((customer) => customer.isActive);
+  const customers = active.filter((customer) => !customerCompleteness(customer).complete);
   return (
     <main className="mx-auto max-w-6xl px-4 py-8">
       <PageHeader title={page.title} subtitle={page.subtitle} />
       <CustomersList
         addButton={<CustomersAddButton canReactivate={can(user, "customers.deactivate")} />}
         customers={customers}
-        emptyText="Nessun cliente attivo da completare."
+        emptyText={
+          active.length === 0
+            ? "Nessun cliente attivo inserito. Per iniziare basta il nome o la ragione sociale."
+            : "Tutti i clienti attivi sono completi per la fatturazione."
+        }
         toggle={null}
       />
     </main>
