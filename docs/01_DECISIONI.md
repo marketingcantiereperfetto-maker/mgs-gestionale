@@ -116,6 +116,18 @@ Aggiornare a ogni traguardo. Una decisione cambiata non si cancella: si aggiunge
 - **Limite delle ricerche dei simili, nel browser:** oltre il limite compare «Troppe ricerche ravvicinate, riprova tra un minuto», senza bloccare il modulo: il cliente si può creare comunque.
 - **Prove del database indipendenti dal servizio di gestione di Supabase:** `npm run test:db` controlla senza rete che il progetto sia quello di prova (riferimento in `NEXT_PUBLIC_SUPABASE_URL`, nell'indirizzo del database e nel progetto collegato alla CLI) e si rifiuta altrimenti. Con `SUPABASE_DB_URL` in `.env.local` (inserito a mano dal titolare, contiene la password del database) le prove si collegano direttamente al database. Motivo: il 4 novembre il servizio di gestione non rispondeva e `supabase test db --linked` restava fermo alla creazione dell'accesso temporaneo («Initialising login role»).
 
+## Decise il 4 novembre 2026 (clienti B: referenti e indirizzi di consegna)
+- **Referenti:** più di uno per cliente; obbligatorio solo il nome; ruolo, email e telefono facoltativi ma controllati se compilati. Email nello stesso formato della PEC, salvata in minuscolo. Telefono: cifre, spazi, «+» iniziale, trattini, parentesi, punti e barre, da 6 a 20 cifre (punti e barre aggiunti per non respingere formati leciti come 02/1234567 o 333.123.4567).
+- **Indirizzi di consegna:** più di uno per cliente; obbligatori via e numero, comune e paese; descrizione, CAP e provincia facoltativi. Il paese non è mai precompilato: «Italia» si sceglie con un clic e si salva con il modulo. In Italia CAP di 5 cifre e provincia di 2 lettere, se compilati.
+- **Principale e predefinito**, come il conto predefinito delle società: il primo attivo lo diventa da solo; uno solo per cliente; lo cambiano tutti i ruoli che modificano i clienti; non si disattiva finché ce ne sono altri attivi; uno riattivato lo diventa solo se manca.
+- **Nessuna cancellazione:** referenti e indirizzi si disattivano e riattivano, solo titolare e responsabile commerciale. Stessi ruoli dei clienti per vedere e modificare; l'amministrazione cataloghi non ha accesso. Regole sul server e nel database.
+- **Collegamento fisso:** il cliente di un referente o di un indirizzo non cambia dopo la creazione (permesso di colonna e controllo sulla riga, che vale anche per gli strumenti di amministrazione).
+- **Registro senza dati personali (modifica del titolare):** per i referenti solo id, id del cliente, stato attivo e i nomi dei campi cambiati, **nemmeno il nome della persona**; per gli indirizzi solo id, id del cliente, stato e nomi dei campi (nemmeno la descrizione). Il registro in italiano dice «ha aggiunto un referente del cliente «X»» con i soli nomi dei campi; lo storico della scheda del cliente include referenti e indirizzi.
+- **Dove si vedono:** solo nella scheda del singolo cliente, mai nell'elenco. I moduli di modifica si aprono a richiesta.
+- **Ricerca nell'elenco clienti:** passa al database (`search_customers`): nome, partita IVA, codice fiscale, PEC ed email dei referenti **attivi**, anche parti dell'indirizzo. Testo da 3 a 100 caratteri (prima 2–80); 20 ricerche al minuto per utente, contate a parte da quelle dei clienti simili; oltre il limite «Troppe ricerche ravvicinate, riprova tra un minuto». I risultati mostrano sempre solo nome, tipo, comune e completezza.
+- **Completezza in dashboard:** per ora calcolata sul server (parte C); da portare nel database quando i clienti saranno centinaia (backlog).
+- **Parte C** (dashboard e percorso guidato) dopo l'unione della B.
+
 ## Aperte (da decidere prima della funzione relativa)
 - Arrotondamenti: prima del motore dei prezzi.
 - Numerazione preventivi e ordini, «Duplica per», taglie come righe o note: prima dei Wizard.

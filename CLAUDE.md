@@ -29,7 +29,7 @@ Versioni: all'avvio fissale (`.nvmrc`, `package.json` con versioni esatte) dopo 
 - Ogni azione passa da un controllo centrale dei permessi sul server (`can(utente, azione, ambito)`).
 - Row Level Security attiva su tutte le tabelle, con regole semplici, come seconda difesa.
 - Registro delle modifiche (chi, quando, cosa) per dati economici e configurazioni.
-- **Nessun dato personale nel registro: solo i nomi dei campi cambiati.** Il registro è immutabile: per clienti, referenti e indirizzi di consegna si salvano solo identificativo, nome, tipo, stato e i nomi dei campi cambiati (o compilati, alla creazione e alla cancellazione), mai i valori. Ogni tabella nuova con dati personali ha il suo trigger di registro ridotto e un test del database che lo verifica sui dati grezzi.
+- **Nessun dato personale nel registro: solo i nomi dei campi cambiati.** Il registro è immutabile: per i clienti si salvano solo identificativo, nome, tipo, stato e i nomi dei campi cambiati; per referenti e indirizzi di consegna solo identificativo, identificativo del cliente, stato e i nomi dei campi cambiati (nemmeno il nome della persona o la descrizione) (o compilati, alla creazione e alla cancellazione), mai i valori. Ogni tabella nuova con dati personali ha il suo trigger di registro ridotto e un test del database che lo verifica sui dati grezzi.
 - Segreti solo in variabili d'ambiente di Vercel e Supabase. Mai nel codice, mai in chat.
 - Nessuna operazione in produzione senza conferma esplicita. Nessun comando che cancelli dati senza chiedere.
 
