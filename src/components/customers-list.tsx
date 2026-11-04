@@ -1,7 +1,7 @@
 import Link from "next/link";
-import { Badge, Card, focusRing, primaryButton } from "@/components/ui";
+import { Badge, Card, focusRing } from "@/components/ui";
 import { customerCompleteness, subjectTypeLabels } from "@/domain/customers/customer";
-import { customerPath, newCustomerPath } from "@/lib/customer-paths";
+import { customerPath } from "@/lib/customer-paths";
 import type { Customer } from "@/server/customers/queries";
 
 // Elenco clienti: solo nome, tipo, comune e completezza (decisione del 4 novembre 2026).
@@ -9,10 +9,13 @@ export function CustomersList({
   customers,
   emptyText,
   toggle,
+  addButton,
 }: {
   customers: Customer[];
   emptyText: string;
   toggle: { href: string; label: string } | null;
+  // Il pulsante «Aggiungi cliente» (la maschera riutilizzabile).
+  addButton: React.ReactNode;
 }) {
   return (
     <Card>
@@ -70,9 +73,7 @@ export function CustomersList({
         </table>
       )}
       <div className="mt-4 flex flex-wrap items-center gap-4">
-        <Link href={newCustomerPath} className={primaryButton}>
-          Aggiungi cliente
-        </Link>
+        {addButton}
         {toggle ? (
           <Link href={toggle.href} className={`rounded text-[13px] text-action ${focusRing}`}>
             {toggle.label}

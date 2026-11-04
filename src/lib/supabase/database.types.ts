@@ -396,6 +396,21 @@ export type Database = {
         Args: { account_id: string };
         Returns: undefined;
       };
+      similar_customers: {
+        Args: {
+          exclude_id?: string;
+          search_name?: string;
+          search_tax_code?: string;
+          search_vat_number?: string;
+        };
+        Returns: {
+          city: string;
+          id: string;
+          is_active: boolean;
+          name: string;
+          reason: string;
+        }[];
+      };
       user_has_password: { Args: { target_user_id: string }; Returns: boolean };
     };
     Enums: {

@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import Link from "next/link";
+import { CustomersAddButton } from "@/components/customers/customers-add";
 import { CustomersList } from "@/components/customers-list";
+import { can } from "@/server/auth/permissions";
 import { Card, PageHeader, fieldClass, focusRing, primaryButton } from "@/components/ui";
 import { maxSearchLength } from "@/domain/customers/search";
 import { customersPath } from "@/lib/customer-paths";
@@ -20,7 +22,7 @@ function listHref(search: string, showInactive: boolean): string {
 }
 
 export default async function CustomersPage({ searchParams }: Props) {
-  const { page } = await requirePage(customersPath);
+  const { page, user } = await requirePage(customersPath);
   const params = await searchParams;
   const showInactive = params.disattivati === "1";
   const search = (params.cerca ?? "").trim().slice(0, maxSearchLength);
@@ -62,6 +64,7 @@ export default async function CustomersPage({ searchParams }: Props) {
         </form>
       </Card>
       <CustomersList
+        addButton={<CustomersAddButton canReactivate={can(user, "customers.deactivate")} />}
         customers={customers.filter((customer) => showInactive || customer.isActive)}
         emptyText={
           search

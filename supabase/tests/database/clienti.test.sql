@@ -31,6 +31,10 @@ insert into who values
   ('responsabile', '00000000-0000-4000-8000-0000000000f5');
 grant select on who to authenticated;
 
+-- Clienti già presenti nel database di prova, per confrontare ciò che vede ciascun ruolo.
+create temporary table existing on commit drop as select count(*)::int as n from public.customers;
+grant select on existing to authenticated;
+
 create function pg_temp.act_as(person text) returns void language sql as $$
   select set_config('request.jwt.claims',
     json_build_object('sub', (select id from who where role = person), 'role', 'authenticated')::text, true);
@@ -68,7 +72,10 @@ select throws_ok(
   $$delete from public.customers$$,
   '42501', null, 'nessuno cancella i clienti dall''app'
 );
-select is((select count(*)::int from public.customers), 1, 'il consulente vede tutti i clienti');
+select is(
+  (select count(*)::int from public.customers), (select n + 1 from existing),
+  'il consulente vede tutti i clienti'
+);
 
 -- Amministrazione cataloghi: nessun accesso.
 select pg_temp.act_as('cataloghi');
