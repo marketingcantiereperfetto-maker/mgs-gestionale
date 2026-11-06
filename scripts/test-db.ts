@@ -1,13 +1,11 @@
-// Prove del database (pgTAP) solo sul progetto DI PROVA. Il controllo è fatto qui, senza rete:
-// il riferimento del progetto in .env.local (e nell'indirizzo del database, se c'è) deve essere
-// quello consentito. Con SUPABASE_DB_URL le prove si collegano direttamente al database e non
-// dipendono dal servizio di gestione di Supabase; senza, usano il progetto collegato alla CLI.
-// L'indirizzo del database contiene la password: non si stampa mai.
+// Prove del database (pgTAP) solo sul Supabase LOCALE in Docker (T0), mai sul cloud. Prima
+// il database si azzera (archivi vuoti, migrazioni applicate da zero); poi girano le prove
+// pgTAP e le prove di integrazione (tests/integration). Indirizzi e chiavi locali non si stampano.
 //
 // Nessun giro passa in silenzio: il comando conta le prove dichiarate (plan(N) di ogni file) e
 // fallisce se ne girano meno; ogni file ha un tempo massimo, e chi non risponde viene nominato.
 // I casi anomali (prova lenta, senza risposta o mancante) si annotano in logs/prove-database.log.
-import { spawn } from "node:child_process";
+import { spawn, spawnSync } from "node:child_process";
 import { appendFileSync, mkdirSync, readFileSync, readdirSync } from "node:fs";
 import { createInterface } from "node:readline";
 import {
@@ -19,52 +17,29 @@ import {
   type Summary,
 } from "./test-db-report.ts";
 import {
-  isTestProject,
-  projectRefFromDbUrl,
-  testProjectRef,
-} from "../src/lib/supabase/test-project.ts";
+  localEnv,
+  readLocalSupabase,
+  resetLocalDatabase,
+  type LocalSupabase,
+} from "./local-supabase.ts";
 
 function fail(message: string): never {
   console.error(`Errore: ${message}`);
   process.exit(1);
 }
 
-if (!isTestProject(process.env.NEXT_PUBLIC_SUPABASE_URL)) {
-  fail(
-    `NEXT_PUBLIC_SUPABASE_URL non è il progetto di prova (${testProjectRef}). Nessuna prova avviata.`,
-  );
+let local: LocalSupabase;
+try {
+  local = readLocalSupabase();
+  console.log("Database locale: azzeramento e migrazioni da zero.");
+  resetLocalDatabase();
+} catch (error) {
+  fail(error instanceof Error ? error.message : "azzeramento del database locale non riuscito.");
 }
+const args = ["supabase", "test", "db", "--local"];
 
-const dbUrl = process.env.SUPABASE_DB_URL;
-let args: string[];
-if (dbUrl) {
-  if (projectRefFromDbUrl(dbUrl) !== testProjectRef) {
-    fail(
-      `SUPABASE_DB_URL non è il database del progetto di prova (${testProjectRef}). Nessuna prova avviata.`,
-    );
-  }
-  console.log("Prove sul database di prova, collegamento diretto (senza servizio di gestione).");
-  args = ["supabase", "test", "db", "--db-url", dbUrl];
-} else {
-  let linked = "";
-  try {
-    linked = readFileSync("supabase/.temp/project-ref", "utf8").trim();
-  } catch {
-    fail("nessun progetto collegato alla CLI e nessun SUPABASE_DB_URL in .env.local.");
-  }
-  if (linked !== testProjectRef) {
-    fail(
-      `il progetto collegato alla CLI non è quello di prova (${testProjectRef}). Nessuna prova avviata.`,
-    );
-  }
-  console.log(
-    "Prove sul progetto di prova collegato alla CLI. Senza SUPABASE_DB_URL dipendono dal servizio di gestione di Supabase.",
-  );
-  args = ["supabase", "test", "db", "--linked"];
-}
-
-// Tempi in secondi: un file di solito finisce in meno di 5 secondi, l'avvio (accesso
-// temporaneo e collegamento) in meno di 15. PROVE_DB_TEMPO_MASSIMO cambia il tempo per file.
+// Tempi in secondi: un file di solito finisce in meno di 5 secondi, l'avvio (collegamento
+// al database locale) in pochi secondi. PROVE_DB_TEMPO_MASSIMO cambia il tempo per file.
 const fileTimeout = Number(process.env.PROVE_DB_TEMPO_MASSIMO ?? 60);
 const startTimeout = 120;
 const slowFile = 20;
@@ -120,7 +95,7 @@ function startTests() {
 createInterface({ input: child.stderr }).on("line", (line) => {
   console.error(line);
   remember(line);
-  if (line.includes("Connecting to remote database")) startTests();
+  if (/Connecting to .*database/.test(line)) startTests();
 });
 
 createInterface({ input: child.stdout }).on("line", (line) => {
@@ -153,7 +128,7 @@ const watchdog = setInterval(() => {
   const next = plans.find((plan) => !results.some((result) => result.file === plan.file));
   stalled =
     phase === "avvio"
-      ? `l'avvio (accesso temporaneo e collegamento al database) non ha risposto dopo ${waited} secondi.`
+      ? `l'avvio (collegamento al database locale) non ha risposto dopo ${waited} secondi.`
       : `la prova ${next?.file ?? "(sconosciuta)"} non ha risposto dopo ${waited} secondi.`;
   note(`SENZA RISPOSTA ${phase === "avvio" ? "avvio" : (next?.file ?? "?")} ${waited}s`);
   try {
@@ -191,6 +166,17 @@ function finish(code: number | null) {
   console.log(
     `\nControllo: ${plans.length} file e ${expectedTests} prove eseguite, come previsto.`,
   );
+  console.log("\nProve di integrazione sul Supabase locale:");
+  const integration = spawnSync(
+    "npx",
+    ["vitest", "run", "--config", "vitest.integration.config.ts"],
+    { stdio: "inherit", env: { ...process.env, ...localEnv(local) } },
+  );
+  if (integration.status !== 0) {
+    note("FALLITO prove di integrazione");
+    console.error("\nProve di integrazione NON superate.");
+    process.exit(1);
+  }
   process.exit(0);
 }
 

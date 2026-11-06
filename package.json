@@ -15,12 +15,15 @@
     "format": "prettier --write .",
     "format:check": "prettier --check .",
     "test": "vitest run",
-    "test:e2e": "playwright test",
+    "test:e2e": "node scripts/test-e2e.ts",
     "check": "npm run typecheck && npm run lint && npm run format:check && npm run test",
     "db:status": "supabase migration list --linked",
     "db:push": "supabase db push --linked",
+    "db:locale:avvia": "supabase start",
+    "db:locale:ferma": "supabase stop",
     "utenti:crea-titolare": "node --env-file=.env.local scripts/create-owner.ts",
-    "test:db": "node --env-file-if-exists=.env.local scripts/test-db.ts",
+    "test:db": "node scripts/test-db.ts",
+    "prova:cloud": "node --env-file=.env.local scripts/cloud-smoke.ts",
     "prova:cancella": "node --env-file=.env.local scripts/delete-test-data.ts"
   },
   "dependencies": {

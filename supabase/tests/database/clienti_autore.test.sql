@@ -7,6 +7,15 @@ set local search_path = public, extensions;
 
 select plan(9);
 
+-- La riga creata qui ha una chiave di creazione casuale: la prova la ritrova per chiave
+-- (identificativo), mai per nome, così altre righe con lo stesso testo non la confondono.
+create temporary table chiavi (label text primary key, key uuid not null default gen_random_uuid()) on commit drop;
+insert into chiavi (label) values ('Cliente Inventato');
+grant select on chiavi to authenticated;
+create function pg_temp.key(label text) returns uuid language sql as $$
+  select key from chiavi where chiavi.label = key.label;
+$$;
+
 insert into auth.users (id, email, encrypted_password, aud, role) values
   ('00000000-0000-4000-8000-0000000000a7', 'titolare@prova.test', '', 'authenticated', 'authenticated'),
   ('00000000-0000-4000-8000-0000000000a8', 'consulente@prova.test', '', 'authenticated', 'authenticated'),
@@ -20,17 +29,17 @@ insert into public.profiles (user_id, role, full_name) values
 
 set local role authenticated;
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000000a7","role":"authenticated"}', true);
-insert into public.customers (name) values ('Cliente Inventato');
+insert into public.customers (name, creation_key) values ('Cliente Inventato', pg_temp.key('Cliente Inventato'));
 
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000000a8","role":"authenticated"}', true);
-update public.customers set address_city = 'Comune di Prova' where name = 'Cliente Inventato';
+update public.customers set address_city = 'Comune di Prova' where creation_key = pg_temp.key('Cliente Inventato');
 
 select is(
-  (select created_by::text from public.customers where name = 'Cliente Inventato'),
+  (select created_by::text from public.customers where creation_key = pg_temp.key('Cliente Inventato')),
   '00000000-0000-4000-8000-0000000000a7', 'chi ha creato è scritto dal database'
 );
 select is(
-  (select updated_by::text from public.customers where name = 'Cliente Inventato'),
+  (select updated_by::text from public.customers where creation_key = pg_temp.key('Cliente Inventato')),
   '00000000-0000-4000-8000-0000000000a8', 'chi ha modificato per ultimo è scritto dal database'
 );
 select throws_ok(

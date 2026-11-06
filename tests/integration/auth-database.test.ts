@@ -2,9 +2,13 @@ import { createClient } from "@supabase/supabase-js";
 import { describe, expect, it } from "vitest";
 import type { Database } from "@/lib/supabase/database.types";
 import { readSupabaseEnv } from "@/lib/supabase/env";
+import { isLocalSupabase } from "@/lib/supabase/test-project";
 
-// Prove sul database di prova vero. Senza .env.local (per esempio su GitHub) vengono saltate.
+// Prove sul Supabase locale (le avvia «npm run test:db»). Rifiutano qualsiasi altro indirizzo.
 const env = readSupabaseEnv();
+if (!env || !isLocalSupabase(env.url)) {
+  throw new Error("Prove di integrazione solo sul Supabase locale: usa «npm run test:db».");
+}
 
 function anonymousClient() {
   return createClient<Database>(env!.url, env!.publishableKey, {
@@ -12,7 +16,7 @@ function anonymousClient() {
   });
 }
 
-describe.skipIf(!env)("database di prova: accesso solo su invito", () => {
+describe("Supabase locale: accesso solo su invito", () => {
   it("una registrazione libera fallisce", async () => {
     // Prima l'impostazione pubblica: se le registrazioni fossero aperte, il test si ferma qui
     // senza creare utenti.
