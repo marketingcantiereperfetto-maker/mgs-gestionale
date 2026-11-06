@@ -1,18 +1,19 @@
 import { defineConfig, devices } from "@playwright/test";
+import { isLocalSupabase } from "./src/lib/supabase/test-project";
 
 const port = 3100;
 
-// Le variabili di .env.local servono ai test con utenti temporanei; i valori non si stampano.
-try {
-  process.loadEnvFile(".env.local");
-} catch {
-  // Senza .env.local (per esempio su GitHub) quei test vengono saltati.
+// Le prove nel browser girano solo sul Supabase locale (T0): «npm run test:e2e» azzera il
+// database e passa indirizzo e chiavi locali, che non si stampano mai. Mai sul cloud.
+if (!isLocalSupabase(process.env.NEXT_PUBLIC_SUPABASE_URL)) {
+  throw new Error("Prove nel browser solo sul Supabase locale: usa «npm run test:e2e».");
 }
 
 export default defineConfig({
   testDir: "tests/e2e",
   forbidOnly: !!process.env.CI,
   retries: process.env.CI ? 1 : 0,
+  workers: process.env.CI ? 3 : undefined,
   use: {
     baseURL: `http://localhost:${port}`,
     locale: "it-IT",
@@ -22,9 +23,12 @@ export default defineConfig({
     trace: "retain-on-failure",
   },
   projects: [
+    // Un solo accesso per ruolo a ogni giro: le sessioni salvate servono a tutte le prove.
+    { name: "accessi", testMatch: /accessi\.setup\.ts/ },
     {
       name: "chromium",
       use: { ...devices["Desktop Chrome"] },
+      dependencies: ["accessi"],
       testIgnore: /(setup-guide|dashboard-customers)\.spec\.ts/,
     },
     // Il percorso guidato guarda tutti i dati del database: la sua prova gira da sola, dopo
@@ -46,7 +50,8 @@ export default defineConfig({
   webServer: {
     command: `npm run build && npm run start -- --port ${port}`,
     url: `http://localhost:${port}`,
-    reuseExistingServer: !process.env.CI,
+    // Sempre un server nuovo, costruito con gli indirizzi locali: mai uno già acceso sul cloud.
+    reuseExistingServer: false,
     timeout: 180_000,
   },
 });

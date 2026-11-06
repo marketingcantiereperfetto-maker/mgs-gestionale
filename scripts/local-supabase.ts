@@ -47,7 +47,26 @@ export function localEnv(local: LocalSupabase): Record<string, string> {
   };
 }
 
-// Archivi vuoti e migrazioni applicate da zero, prima di ogni giro di prove.
-export function resetLocalDatabase(): void {
+// Archivi vuoti e migrazioni applicate da zero, prima di ogni giro di prove. Dopo
+// l'azzeramento i servizi ripartono: si aspetta che API e accesso rispondano davvero.
+export async function resetLocalDatabase(local: LocalSupabase): Promise<void> {
   execFileSync("npx", ["supabase", "db", "reset", "--local"], { stdio: "inherit" });
+  const headers = { apikey: local.secretKey, Authorization: `Bearer ${local.secretKey}` };
+  const checks = [
+    `${local.apiUrl}/rest/v1/profiles?select=user_id&limit=1`,
+    `${local.apiUrl}/auth/v1/health`,
+  ];
+  const deadline = Date.now() + 90_000;
+  while (Date.now() < deadline) {
+    const answers = await Promise.all(
+      checks.map((address) =>
+        fetch(address, { headers })
+          .then((answer) => answer.ok)
+          .catch(() => false),
+      ),
+    );
+    if (answers.every(Boolean)) return;
+    await new Promise((resolve) => setTimeout(resolve, 1000));
+  }
+  throw new Error("dopo l'azzeramento il Supabase locale non risponde entro 90 secondi.");
 }

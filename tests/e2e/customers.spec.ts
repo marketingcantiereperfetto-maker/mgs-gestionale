@@ -6,13 +6,14 @@ import {
   canUseTemporaryUsers,
   createTemporaryUser,
   deleteTemporaryUser,
-  signIn,
-  type TemporaryUser,
+  openSession,
+  roleUser,
+  type TestUser,
 } from "./support/temporary-users";
 
 // Clienti con dati inventati, cancellati alla fine (solo sul progetto di prova). Senza
 // .env.local vengono saltati.
-test.skip(!canUseTemporaryUsers, "servono le variabili del database di prova in .env.local");
+test.skip(!canUseTemporaryUsers, "servono le variabili del Supabase locale (npm run test:e2e)");
 test.describe.configure({ mode: "serial" });
 
 const mine = runPrefix(randomUUID().slice(0, 8));
@@ -20,18 +21,19 @@ const customerName = `${mine} Cliente Srl`;
 const privateName = `${mine} Privato`;
 const groupCompany = `${mine} Gruppo Srl`;
 const users: Partial<
-  Record<"owner" | "consultant" | "catalog" | "finance" | "manager" | "busy", TemporaryUser>
+  Record<"owner" | "consultant" | "catalog" | "finance" | "manager" | "busy", TestUser>
 > = {};
 let customerUrl = "";
 let privateUrl = "";
 
 test.beforeAll(async () => {
   test.setTimeout(120_000);
-  users.owner = await createTemporaryUser("owner");
-  users.consultant = await createTemporaryUser("sales_consultant");
-  users.catalog = await createTemporaryUser("catalog_admin");
+  users.owner = roleUser("owner");
+  users.consultant = roleUser("sales_consultant");
+  users.catalog = roleUser("catalog_admin");
+  // Amministrazione economica dedicata: viene collegata alla società del gruppo.
   users.finance = await createTemporaryUser("finance_admin");
-  users.manager = await createTemporaryUser("sales_manager");
+  users.manager = roleUser("sales_manager");
   // Consulente usata solo per superare il limite delle ricerche (resta bloccata per un minuto).
   users.busy = await createTemporaryUser("sales_consultant");
   const { data, error } = await admin()
@@ -66,7 +68,7 @@ const completeness = (page: Page) => page.getByTestId("completeness");
 test("si crea un cliente con il solo nome: risulta Incompleta e dice cosa manca", async ({
   page,
 }) => {
-  await signIn(page, users.owner!);
+  await openSession(page, users.owner!);
   const menu = page.getByRole("navigation", { name: "Menu principale" });
   await menu.getByRole("button", { name: "Clienti", exact: true }).click();
   await menu.getByRole("link", { name: "Elenco" }).click();
@@ -94,7 +96,7 @@ test("si crea un cliente con il solo nome: risulta Incompleta e dice cosa manca"
 test("dati sbagliati rifiutati; completato diventa «Completa per fatturazione»", async ({
   page,
 }) => {
-  await signIn(page, users.owner!);
+  await openSession(page, users.owner!);
   await openReady(page, customerUrl);
 
   await page.getByLabel("Tipo di soggetto").selectOption("company");
@@ -138,7 +140,7 @@ test("l'elenco mostra solo nome, tipo, comune e completezza; «da completare» f
     .insert({ name: privateName, subject_type: "private", tax_code: "RSSMRA85T10A562S" });
   expect(error).toBeNull();
 
-  await signIn(page, users.owner!);
+  await openSession(page, users.owner!);
   await openReady(page, "/clienti");
   const row = page.getByTestId("customer-row").filter({ hasText: customerName });
   await expect(row).toContainText("Azienda");
@@ -156,7 +158,7 @@ test("l'elenco mostra solo nome, tipo, comune e completezza; «da completare» f
 });
 
 test("il registro dice cosa è cambiato, senza i dati personali", async ({ page }) => {
-  await signIn(page, users.owner!);
+  await openSession(page, users.owner!);
   await openReady(page, privateUrl);
   await page.getByLabel("Codice fiscale").fill("RSSMRA85T10A56NH");
   await page.getByLabel("PEC").fill("privato@pec.prova.test");
@@ -174,7 +176,7 @@ test("il registro dice cosa è cambiato, senza i dati personali", async ({ page 
 test("consulente: vede e modifica, non disattiva né indica la società del gruppo", async ({
   page,
 }) => {
-  await signIn(page, users.consultant!);
+  await openSession(page, users.consultant!);
   await openReady(page, "/clienti");
   await expect(page.getByRole("link", { name: customerName })).toBeVisible();
   await openReady(page, customerUrl);
@@ -191,7 +193,7 @@ test("consulente: vede e modifica, non disattiva né indica la società del grup
 });
 
 test("amministrazione economica indica la società del gruppo", async ({ page }) => {
-  await signIn(page, users.finance!);
+  await openSession(page, users.finance!);
   await openReady(page, customerUrl);
   await page.getByLabel("Società del gruppo").selectOption({ label: groupCompany });
   await page.getByRole("button", { name: "Salva" }).click();
@@ -209,7 +211,7 @@ test("amministrazione economica indica la società del gruppo", async ({ page })
 });
 
 test("responsabile commerciale disattiva e riattiva", async ({ page }) => {
-  await signIn(page, users.manager!);
+  await openSession(page, users.manager!);
   await openReady(page, customerUrl);
   await page.getByRole("button", { name: "Disattiva", exact: true }).click();
   await expect(status(page, "Cliente disattivato.")).toBeVisible();
@@ -223,7 +225,7 @@ test("responsabile commerciale disattiva e riattiva", async ({ page }) => {
 });
 
 test("l'amministrazione cataloghi non apre i clienti", async ({ page }) => {
-  await signIn(page, users.catalog!);
+  await openSession(page, users.catalog!);
   for (const path of ["/clienti", customerUrl, "/clienti/nuovo"]) {
     await page.goto(path);
     await expect(page, path).toHaveURL("/?accesso=negato");
@@ -236,7 +238,7 @@ test("l'amministrazione cataloghi non apre i clienti", async ({ page }) => {
 });
 
 test("consulente: ricerca per nome, partita IVA, codice fiscale e PEC", async ({ page }) => {
-  await signIn(page, users.consultant!);
+  await openSession(page, users.consultant!);
   await openReady(page, "/clienti");
   const search = page.getByRole("searchbox", { name: /^Cerca per nome/ });
   const table = page.getByTestId("customers-table");
@@ -265,7 +267,7 @@ test("consulente: ricerca per nome, partita IVA, codice fiscale e PEC", async ({
 test("consulente: la scheda dice chi ha creato e chi ha modificato per ultimo", async ({
   page,
 }) => {
-  await signIn(page, users.consultant!);
+  await openSession(page, users.consultant!);
   await openReady(page, privateUrl);
   // Il cliente privato l'ha inserito la procedura di prova, senza un utente.
   await expect(page.getByTestId("customer-authors")).toContainText(
@@ -296,7 +298,7 @@ async function openDialog(page: Page) {
 test("finestra «Aggiungi cliente»: focus dentro, Esc chiude, il focus torna al pulsante", async ({
   page,
 }) => {
-  await signIn(page, users.consultant!);
+  await openSession(page, users.consultant!);
   await openDialog(page);
   await expect(dialog(page).getByLabel("Nome o ragione sociale")).toBeFocused();
   for (let tab = 0; tab < 40; tab++) {
@@ -314,7 +316,7 @@ test("finestra «Aggiungi cliente»: focus dentro, Esc chiude, il focus torna al
 test("clienti simili mentre si scrive, con solo nome e comune; «Usa questo cliente»", async ({
   page,
 }) => {
-  await signIn(page, users.consultant!);
+  await openSession(page, users.consultant!);
   await openDialog(page);
   await dialog(page).getByLabel("Nome o ragione sociale").fill(customerName.replace(" Srl", ""));
   const similar = dialog(page).getByTestId("similar-customers");
@@ -338,7 +340,7 @@ test("partita IVA identica: serve «È un cliente diverso», senza codici nei me
   page,
 }) => {
   const name = `${mine} Stessa IVA Srl`;
-  await signIn(page, users.consultant!);
+  await openSession(page, users.consultant!);
   await openDialog(page);
   await dialog(page).getByLabel("Nome o ragione sociale").fill(name);
   await dialog(page).getByLabel("Partita IVA").fill("01234567897");
@@ -372,7 +374,7 @@ test("stesso codice fiscale e stesso codice ufficio PA: bloccato anche con la ca
     });
   expect(error).toBeNull();
 
-  await signIn(page, users.consultant!);
+  await openSession(page, users.consultant!);
   await openDialog(page);
   await dialog(page).getByLabel("Nome o ragione sociale").fill(`${mine} Ufficio Doppio`);
   await dialog(page).getByLabel("Codice fiscale").fill("80000000002");
@@ -387,7 +389,7 @@ test("stesso codice fiscale e stesso codice ufficio PA: bloccato anche con la ca
 });
 
 test("le stesse regole valgono nella scheda", async ({ page }) => {
-  await signIn(page, users.consultant!);
+  await openSession(page, users.consultant!);
   await openReady(page, privateUrl);
   await page.getByLabel("Partita IVA").fill("01234567897");
   await page.getByRole("button", { name: "Salva" }).click();
@@ -402,7 +404,7 @@ test("clienti disattivati nei suggerimenti: «Riattiva» solo per chi può", asy
   const { error } = await admin().from("customers").insert({ name, is_active: false });
   expect(error).toBeNull();
 
-  await signIn(page, users.consultant!);
+  await openSession(page, users.consultant!);
   await openDialog(page);
   await dialog(page).getByLabel("Nome o ragione sociale").fill(name);
   const item = dialog(page)
@@ -415,7 +417,7 @@ test("clienti disattivati nei suggerimenti: «Riattiva» solo per chi può", asy
 
   // Si esce dal consulente e si entra come responsabile commerciale.
   await page.context().clearCookies();
-  await signIn(page, users.manager!);
+  await openSession(page, users.manager!);
   await openDialog(page);
   await dialog(page).getByLabel("Nome o ragione sociale").fill(name);
   const managerItem = dialog(page)
@@ -429,7 +431,7 @@ test("clienti disattivati nei suggerimenti: «Riattiva» solo per chi può", asy
 
 test("la pagina «Nuovo cliente» usa lo stesso modulo", async ({ page }) => {
   const name = `${mine} Dalla Pagina`;
-  await signIn(page, users.consultant!);
+  await openSession(page, users.consultant!);
   await openReady(page, "/clienti/nuovo");
   await page.getByLabel("Nome o ragione sociale").fill(name);
   await page.getByRole("button", { name: "Crea cliente" }).dblclick();
@@ -442,7 +444,7 @@ test("oltre il limite delle ricerche: messaggio gentile, il modulo funziona comu
   page,
 }) => {
   test.setTimeout(90_000);
-  await signIn(page, users.busy!);
+  await openSession(page, users.busy!);
   await openDialog(page);
   const name = dialog(page).getByLabel("Nome o ragione sociale");
   const notice = dialog(page).getByTestId("similar-error");

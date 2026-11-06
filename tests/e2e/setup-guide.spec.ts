@@ -4,23 +4,23 @@ import { deleteTestBrands, deleteTestCompanies, runPrefix, testPrefix } from "./
 import {
   admin,
   canUseTemporaryUsers,
-  createTemporaryUser,
   deleteTemporaryUser,
-  signIn,
-  type TemporaryUser,
+  openSession,
+  roleUser,
+  type TestUser,
 } from "./support/temporary-users";
 
 // Percorso guidato con dati inventati, cancellati alla fine (solo sul progetto di prova).
 // Gira da solo e per ultimo (progetto «percorso-guidato»). Se nel database ci sono società o
 // brand attivi che non sono di prova, si salta: lo stato del percorso non sarebbe controllabile.
-test.skip(!canUseTemporaryUsers, "servono le variabili del database di prova in .env.local");
+test.skip(!canUseTemporaryUsers, "servono le variabili del Supabase locale (npm run test:e2e)");
 test.describe.configure({ mode: "serial" });
 
 const mine = runPrefix(randomUUID().slice(0, 8));
 const companyName = `${mine} Percorso Srl`;
 const brandName = `${mine} Brand percorso`;
-let owner: TemporaryUser;
-let consultant: TemporaryUser;
+let owner: TestUser;
+let consultant: TestUser;
 let realData = false;
 // Clienti attivi già presenti (per esempio il «CLIENTE PROVA» del titolare, che non si tocca):
 // in quel caso il passo dei clienti è già «Fatto». Il caso «Da fare» lo coprono i test di unità.
@@ -53,8 +53,8 @@ test.beforeAll(async () => {
   // Gira da solo: si possono togliere tutti i resti di prove precedenti.
   await deleteTestBrands({ prefix: testPrefix });
   await deleteTestCompanies({ prefix: testPrefix });
-  owner = await createTemporaryUser("owner");
-  consultant = await createTemporaryUser("sales_consultant");
+  owner = roleUser("owner");
+  consultant = roleUser("sales_consultant");
 });
 
 test.beforeEach(() => {
@@ -91,7 +91,7 @@ async function expectStatuses(page: Page, first4: string[]) {
 test("archivio vuoto: quattro passi da fare, gli altri arriveranno, senza pulsanti finti", async ({
   page,
 }) => {
-  await signIn(page, owner);
+  await openSession(page, owner);
   await dashboard(page);
   await expectStatuses(page, ["todo", "todo", "todo", "todo"]);
   // Lo stato è scritto a parole, non solo a colori.
@@ -132,7 +132,7 @@ test("archivio vuoto: quattro passi da fare, gli altri arriveranno, senza pulsan
 
 test("da «da fare» a «fatto», un passo alla volta", async ({ page }) => {
   test.setTimeout(90_000);
-  await signIn(page, owner);
+  await openSession(page, owner);
   await dashboard(page);
 
   // 1. Società.
@@ -205,7 +205,7 @@ test("più di 5 società da completare: i primi 5 nomi e «e altre N»", async (
   const { error } = await admin().from("companies").insert(names);
   expect(error).toBeNull();
 
-  await signIn(page, owner);
+  await openSession(page, owner);
   await dashboard(page);
   await expectStatuses(page, ["done", "todo", "todo", "done"]);
   await expect(step(page, 1)).toContainText("e altre 2.");
@@ -216,7 +216,7 @@ test("più di 5 società da completare: i primi 5 nomi e «e altre N»", async (
 });
 
 test("il consulente vede solo la frase, senza passi", async ({ page }) => {
-  await signIn(page, consultant);
+  await openSession(page, consultant);
   await dashboard(page);
   await expect(page.getByTestId("setup-message")).toHaveText(
     "La configurazione iniziale la cura il titolare.",

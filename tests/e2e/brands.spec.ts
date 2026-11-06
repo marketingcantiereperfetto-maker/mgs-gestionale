@@ -1,20 +1,19 @@
-import { createClient } from "@supabase/supabase-js";
 import { expect, test, type Page } from "@playwright/test";
 import { randomUUID } from "node:crypto";
 import { deleteTestBrands, deleteTestCompanies, runPrefix } from "./support/test-data";
 import {
   admin,
   canUseTemporaryUsers,
-  createTemporaryUser,
-  deleteLeftoverTemporaryUsers,
+  accessToken,
   deleteTemporaryUser,
-  signIn,
-  type TemporaryUser,
+  openSession,
+  roleUser,
+  type TestUser,
 } from "./support/temporary-users";
 
 // Brand, loghi e collegamenti con dati inventati, cancellati alla fine (solo sul progetto di
 // prova). Senza .env.local vengono saltati.
-test.skip(!canUseTemporaryUsers, "servono le variabili del database di prova in .env.local");
+test.skip(!canUseTemporaryUsers, "servono le variabili del Supabase locale (npm run test:e2e)");
 test.describe.configure({ mode: "serial" });
 
 const mine = runPrefix(randomUUID().slice(0, 8));
@@ -28,17 +27,16 @@ const png = Buffer.from(
   "base64",
 );
 
-let owner: TemporaryUser;
-let consultant: TemporaryUser;
+let owner: TestUser;
+let consultant: TestUser;
 let brandUrl = "";
 
 test.beforeAll(async () => {
   test.setTimeout(120_000);
-  await deleteLeftoverTemporaryUsers();
   await deleteTestBrands({ leftoversOlderThanHour: true });
   await deleteTestCompanies({ leftoversOlderThanHour: true });
-  owner = await createTemporaryUser("owner");
-  consultant = await createTemporaryUser("sales_consultant");
+  owner = roleUser("owner");
+  consultant = roleUser("sales_consultant");
   const { error } = await admin().from("companies").insert({ legal_name: companyName });
   if (error) throw new Error(`Società di prova non creata: ${error.message}`);
 });
@@ -64,7 +62,7 @@ async function brandRow() {
 }
 
 test("doppio clic su «Crea brand»: un solo brand; il nome non si ripete", async ({ page }) => {
-  await signIn(page, owner);
+  await openSession(page, owner);
   await page.goto("/impostazioni/societa-e-brand");
   await page.getByRole("link", { name: "Aggiungi brand" }).click();
   await page.getByLabel("Nome del brand").fill(brandName);
@@ -81,7 +79,7 @@ test("doppio clic su «Crea brand»: un solo brand; il nome non si ripete", asyn
 });
 
 test("logo: un'immagine vera si carica con un nome scelto dal server", async ({ page }) => {
-  await signIn(page, owner);
+  await openSession(page, owner);
   await page.goto(brandUrl);
   await page.getByLabel(/^File del logo/).setInputFiles({
     name: "mio-logo-personale.png",
@@ -110,7 +108,7 @@ test("logo: un'immagine vera si carica con un nome scelto dal server", async ({ 
 });
 
 test("logo: file finto, troppo grande o vuoto vengono rifiutati", async ({ page }) => {
-  await signIn(page, owner);
+  await openSession(page, owner);
   await page.goto(brandUrl);
   const file = page.getByLabel(/^File del logo/);
   const send = page.getByRole("button", { name: "Sostituisci logo" });
@@ -143,13 +141,7 @@ test("chi non è titolare non legge il logo con l'indirizzo non firmato", async 
   const url = process.env.NEXT_PUBLIC_SUPABASE_URL!;
   const key = process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!;
 
-  const client = createClient(url, key, { auth: { persistSession: false } });
-  const { data, error } = await client.auth.signInWithPassword({
-    email: consultant.email,
-    password: consultant.password,
-  });
-  expect(error).toBeNull();
-  const headers = { apikey: key, Authorization: `Bearer ${data.session!.access_token}` };
+  const headers = { apikey: key, Authorization: `Bearer ${accessToken(consultant)}` };
 
   const asConsultant = await request.get(`${url}/storage/v1/object/authenticated/logos/${path}`, {
     headers,
@@ -159,11 +151,10 @@ test("chi non è titolare non legge il logo con l'indirizzo non firmato", async 
   expect(direct.ok()).toBe(false);
   const anonymous = await request.get(`${url}/storage/v1/object/public/logos/${path}`);
   expect(anonymous.ok()).toBe(false);
-  await client.auth.signOut();
 });
 
 test("collegamenti: spunta e tolta, con l'avviso senza blocco", async ({ page }) => {
-  await signIn(page, owner);
+  await openSession(page, owner);
   await page.goto(brandUrl);
   await expect(page.getByText("Questo brand non è collegato a nessuna società.")).toBeVisible();
 
@@ -192,7 +183,7 @@ test("collegamenti: spunta e tolta, con l'avviso senza blocco", async ({ page })
 });
 
 test("il brand disattivato sparisce dall'elenco e si riattiva", async ({ page }) => {
-  await signIn(page, owner);
+  await openSession(page, owner);
   await page.goto(brandUrl);
   await page.getByRole("button", { name: "Disattiva", exact: true }).click();
   await expect(status(page, "Brand disattivato.")).toBeVisible();
@@ -212,7 +203,7 @@ test("due società non possono avere la stessa partita IVA", async ({ page }) =>
   await admin().from("companies").insert({ legal_name: second });
   const { data } = await admin().from("companies").select("id").eq("legal_name", second).single();
 
-  await signIn(page, owner);
+  await openSession(page, owner);
   await page.goto(`/impostazioni/societa-e-brand/societa/${data!.id}`);
   // Il modulo deve essere pronto (JavaScript caricato) prima di scrivere.
   await page.waitForLoadState("networkidle");
@@ -222,7 +213,7 @@ test("due società non possono avere la stessa partita IVA", async ({ page }) =>
 });
 
 test("il consulente non apre i brand né carica loghi", async ({ page }) => {
-  await signIn(page, consultant);
+  await openSession(page, consultant);
   await page.goto(brandUrl);
   await expect(page).toHaveURL("/?accesso=negato");
   const { id } = await brandRow();

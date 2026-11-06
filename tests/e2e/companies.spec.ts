@@ -4,31 +4,29 @@ import { deleteTestCompanies, runPrefix } from "./support/test-data";
 import { admin } from "./support/temporary-users";
 import {
   canUseTemporaryUsers,
-  createTemporaryUser,
-  deleteLeftoverTemporaryUsers,
   deleteTemporaryUser,
-  signIn,
-  type TemporaryUser,
+  openSession,
+  roleUser,
+  type TestUser,
 } from "./support/temporary-users";
 
 // Traguardo del giorno 5 con dati inventati, cancellati alla fine: la prima società con un
 // IBAN, i controlli sui dati e le regole dei conti. Senza .env.local vengono saltati.
-test.skip(!canUseTemporaryUsers, "servono le variabili del database di prova in .env.local");
+test.skip(!canUseTemporaryUsers, "servono le variabili del Supabase locale (npm run test:e2e)");
 test.describe.configure({ mode: "serial" });
 
 const mine = runPrefix(randomUUID().slice(0, 8));
 
-let owner: TemporaryUser;
-let consultant: TemporaryUser;
+let owner: TestUser;
+let consultant: TestUser;
 const companyName = `${mine} ${randomUUID().slice(0, 8)} Srl`;
 let companyUrl = "";
 
 test.beforeAll(async () => {
   test.setTimeout(120_000);
-  await deleteLeftoverTemporaryUsers();
   await deleteTestCompanies({ leftoversOlderThanHour: true });
-  owner = await createTemporaryUser("owner");
-  consultant = await createTemporaryUser("sales_consultant");
+  owner = roleUser("owner");
+  consultant = roleUser("sales_consultant");
 });
 
 test.afterAll(async () => {
@@ -42,7 +40,7 @@ const alert = (page: Page, text: string | RegExp) =>
   page.getByRole("alert").filter({ hasText: text });
 
 test("il titolare crea una società con la sola ragione sociale", async ({ page }) => {
-  await signIn(page, owner);
+  await openSession(page, owner);
   const menu = page.getByRole("navigation", { name: "Menu principale" });
   await menu.getByRole("button", { name: "Impostazioni", exact: true }).click();
   await menu.getByRole("link", { name: "Società e brand" }).click();
@@ -64,7 +62,7 @@ test("il titolare crea una società con la sola ragione sociale", async ({ page 
 });
 
 test("i dati sbagliati vengono rifiutati, quelli giusti salvati", async ({ page }) => {
-  await signIn(page, owner);
+  await openSession(page, owner);
   await page.goto(companyUrl);
 
   await page.getByLabel("Partita IVA").fill("01234567890");
@@ -95,7 +93,7 @@ test("i dati sbagliati vengono rifiutati, quelli giusti salvati", async ({ page 
 test("conti: IBAN controllato, primo predefinito, il predefinito non si disattiva", async ({
   page,
 }) => {
-  await signIn(page, owner);
+  await openSession(page, owner);
   await page.goto(companyUrl);
   const accounts = page.getByTestId("bank-account");
 
@@ -135,7 +133,7 @@ test("conti: IBAN controllato, primo predefinito, il predefinito non si disattiv
 });
 
 test("la società disattivata sparisce dall'elenco e si può riattivare", async ({ page }) => {
-  await signIn(page, owner);
+  await openSession(page, owner);
   await page.goto(companyUrl);
   await page.getByRole("button", { name: "Disattiva", exact: true }).last().click();
   await expect(page.getByText("Disattivata", { exact: true })).toBeVisible();
@@ -153,7 +151,7 @@ test("la società disattivata sparisce dall'elenco e si può riattivare", async 
 });
 
 test("il consulente non apre società e brand, neanche dall'indirizzo", async ({ page }) => {
-  await signIn(page, consultant);
+  await openSession(page, consultant);
   for (const href of [
     "/impostazioni/societa-e-brand",
     companyUrl,
@@ -166,7 +164,7 @@ test("il consulente non apre società e brand, neanche dall'indirizzo", async ({
 
 test("doppio clic su «Crea società»: si crea una sola società", async ({ page }) => {
   const name = `${mine} doppio clic ${randomUUID().slice(0, 8)} Srl`;
-  await signIn(page, owner);
+  await openSession(page, owner);
   await page.goto("/impostazioni/societa-e-brand/societa/nuova");
   await page.getByLabel("Ragione sociale").fill(name);
   await page.getByRole("button", { name: "Crea società" }).dblclick();
@@ -184,7 +182,7 @@ test("doppio clic su «Crea società»: si crea una sola società", async ({ pag
 test("doppio clic su «Aggiungi conto»: un solo conto; lo stesso IBAN non si ripete", async ({
   page,
 }) => {
-  await signIn(page, owner);
+  await openSession(page, owner);
   await page.goto(companyUrl);
   const accounts = page.getByTestId("bank-account");
   const iban = page.getByLabel("IBAN");
@@ -207,7 +205,7 @@ test("doppio clic su «Aggiungi conto»: un solo conto; lo stesso IBAN non si ri
 });
 
 test("durante l'invio il pulsante si disabilita e mostra l'attesa", async ({ page }) => {
-  await signIn(page, owner);
+  await openSession(page, owner);
   await page.goto(companyUrl);
   // Rallenta la risposta del server per vedere lo stato d'attesa.
   await page.route("**/*", async (route) => {

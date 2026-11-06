@@ -32,7 +32,7 @@ let local: LocalSupabase;
 try {
   local = readLocalSupabase();
   console.log("Database locale: azzeramento e migrazioni da zero.");
-  resetLocalDatabase();
+  await resetLocalDatabase(local);
 } catch (error) {
   fail(error instanceof Error ? error.message : "azzeramento del database locale non riuscito.");
 }
