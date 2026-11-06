@@ -49,11 +49,16 @@ npm run dev
 Poi apri http://localhost:3000.
 
 Controlli prima di ogni commit: `npm run check` (tipi, stile, formattazione, test).
-I test in `tests/integration` usano il database di prova di `.env.local`; senza quel file vengono saltati.
 
 Database: `npm run db:status` (migrazioni applicate), `npm run db:push` (applica le nuove al database collegato).
-Test nel browser per ruolo: `npm run test:e2e` crea un utente di prova temporaneo per ogni ruolo (indirizzi `e2e-…@prova.test`, password solo in memoria), lo usa e lo cancella alla fine. Servono le variabili di `.env.local`; senza, quei test vengono saltati.
 Pulizia del database di prova: `npm run prova:cancella -- --societa "NOME ESATTO" --brand "NOME ESATTO" --cliente "NOME ESATTO"` mostra cosa cancellerebbe (società, brand e clienti di dati inventati, con conti, collegamenti e loghi); con `--conferma` cancella. Si rifiuta di girare se il progetto non è quello di prova; il registro delle modifiche non si tocca.
-Test del database: `npm run test:db` controlla senza rete che il progetto sia quello di prova (si rifiuta altrimenti). Se in `.env.local` c'è `SUPABASE_DB_URL` (indirizzo diretto del database di prova, con password, da inserire a mano) le prove si collegano direttamente e non dipendono dal servizio di gestione di Supabase; altrimenti usano il progetto collegato alla CLI. Dettagli: (prove in `supabase/tests/database` sul database di prova, dentro una transazione annullata: non lascia dati). Il comando conta le prove dichiarate (`plan(N)` di ogni file) e fallisce se ne girano meno; ogni file ha 60 secondi al massimo (`PROVE_DB_TEMPO_MASSIMO` per cambiarli) e l'avvio 120: chi non risponde viene nominato. Prove lente (oltre 20 secondi), senza risposta o mancanti si annotano in `logs/prove-database.log` (solo sul proprio computer).
 Primo titolare: `npm run utenti:crea-titolare -- --email nome@dominio.it --sito https://mgs-gestionale.vercel.app` (prova senza effetti; con `--conferma` crea l'invito e stampa nel Terminale il link personale, valido 1 ora, da non copiare in chat).
-Test nel browser: `npm run test:e2e` (la prima volta: `npx playwright install chromium`).
+### Prove sul Supabase locale (T0)
+Tutte le prove con database girano su un Supabase locale in Docker, mai sul cloud. Serve Docker Desktop aperto.
+
+- `npm run db:locale:avvia` avvia il Supabase locale di questo progetto (porte 58320–58329: API 58321, database 58322, Studio 58323 spento, posta di prova 58324). `npm run db:locale:ferma` lo ferma. Non toccare gli altri contenitori.
+- `npm run test:db`: azzera il database locale (archivi vuoti, migrazioni da zero), poi le prove pgTAP di `supabase/tests/database` e le prove di `tests/integration`. Conta le prove dichiarate (`plan(N)`) e fallisce se ne girano meno; anomalie in `logs/prove-database.log`.
+- `npm run test:e2e`: azzera il database locale e lancia le prove nel browser (la prima volta: `npx playwright install chromium`). Un solo accesso per ruolo a ogni giro (`tests/e2e/accessi.setup.ts`, sessioni salvate in `playwright/.auth/`, fuori da git); utenti dedicati solo dove la prova cambia l'utente. Si può indicare un file: `npm run test:e2e -- tests/e2e/invite.spec.ts`.
+- I comandi rifiutano qualsiasi indirizzo che non sia `127.0.0.1:58321` / `58322` e non leggono `.env.local`.
+- `npm run prova:cloud` (a mano, non a ogni richiesta): controlla che il progetto cloud di prova abbia le stesse impostazioni del locale (iscrizioni chiuse, password di almeno 12 caratteri, limiti dei loghi). Rifiuta ogni altro progetto.
+- Le prove usano valori unici (codice casuale) e cercano le righe per identificativo, mai per testo.
