@@ -112,3 +112,16 @@ test("l'amministrazione economica apre il registro delle modifiche", async ({ pa
   ).toBeVisible();
   await expect(menu.getByRole("link", { name: "Società e brand" })).toHaveCount(0);
 });
+
+test("permessi non verificati: messaggio chiaro con «Riprova»", async ({ page }) => {
+  await signIn(page, consultant);
+  await page.goto("/verifica-permessi?da=%2Fclienti");
+  // C'è anche l'avviso di navigazione di Next.js (anch'esso «alert»): si cerca il messaggio.
+  await expect(
+    page.getByRole("alert").filter({ hasText: "Impossibile verificare i permessi, riprova." }),
+  ).toBeVisible();
+  await expect(page.getByRole("link", { name: "Riprova" })).toHaveAttribute("href", "/clienti");
+  // Un indirizzo esterno non diventa mai la destinazione di «Riprova».
+  await page.goto("/verifica-permessi?da=https%3A%2F%2Fesempio.test");
+  await expect(page.getByRole("link", { name: "Riprova" })).toHaveAttribute("href", "/");
+});

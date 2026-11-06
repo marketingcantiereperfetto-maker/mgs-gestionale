@@ -2,7 +2,7 @@ import { redirect } from "next/navigation";
 import { AuthCard } from "@/components/auth-card";
 import { textButton } from "@/components/ui";
 import { TopBar } from "@/components/top-bar";
-import { loginPath, setPasswordPath } from "@/lib/auth/routes";
+import { loginPath, permissionsUnavailablePath, setPasswordPath } from "@/lib/auth/routes";
 import { initials } from "@/lib/initials";
 import { visibleNavigation } from "@/lib/navigation";
 import { signOut } from "@/server/auth/actions";
@@ -13,6 +13,7 @@ export default async function AppLayout({ children }: { children: React.ReactNod
   const session = await getSession();
   if (session.status === "anonymous") redirect(loginPath);
   if (session.status === "password-required") redirect(setPasswordPath);
+  if (session.status === "permissions-unavailable") redirect(permissionsUnavailablePath);
 
   if (session.status === "without-profile") {
     return (

@@ -1,5 +1,5 @@
 import { notFound, redirect } from "next/navigation";
-import { loginPath, setPasswordPath } from "@/lib/auth/routes";
+import { loginPath, permissionsUnavailablePath, setPasswordPath } from "@/lib/auth/routes";
 import { findPage, type NavPage } from "@/lib/navigation";
 import { getSession, type CurrentUser, type Session } from "./current-user";
 import { can } from "./permissions";
@@ -16,6 +16,10 @@ export type PageDecision =
 export function decidePageAccess(session: Session, href: string): PageDecision {
   if (session.status === "anonymous") return { kind: "redirect", to: loginPath };
   if (session.status === "password-required") return { kind: "redirect", to: setPasswordPath };
+  // Permessi non verificati: un messaggio chiaro, mai la dashboard in silenzio.
+  if (session.status === "permissions-unavailable") {
+    return { kind: "redirect", to: `${permissionsUnavailablePath}?da=${encodeURIComponent(href)}` };
+  }
   if (session.status !== "active") return { kind: "redirect", to: "/" };
 
   const access = findPage(href);

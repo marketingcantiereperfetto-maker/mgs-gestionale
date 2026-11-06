@@ -23,6 +23,7 @@ Ogni lavoro ha un criterio per dire «è fatto». Si lavora dall'alto verso il b
 ## Fase 2: catalogo, prezzi e Wizard (architettura v6, piano in `06_PIANO_CATALOGO.md`)
 *Sostituisce dal 6 novembre 2026 le vecchie voci 7-11 (archivi, ricarico, importazione, motore dei prezzi, Wizard), riscritte secondo la v6.*
 - **K0 Permessi per utente** *(K0a database, regole e `can()` in revisione, ramo `fase2/k0-permessi`; poi K0b pagina «Utenti e ruoli» con le spunte, il cambio di ruolo e le società collegate, oppure K0c per queste ultime due se K0b diventa troppo grande)*: tabella dei permessi con i preset dei cinque ruoli, spunte per utente, permessi sensibili concessi solo dal titolare, `can()` e regole del database sulle facoltà effettive. *Fatto quando:* ogni ruolo con i soli preset si comporta come prima, e un permesso aggiunto o tolto cambia davvero cosa l'utente può fare, anche chiamando il database direttamente.
+- **T0 Prove su Supabase locale in Docker** (dopo K0a, prima di K0b): database azzerato a ogni giro, prove che rifiutano il cloud, prove di fumo separate sul cloud, un accesso per ruolo per giro, stesso Supabase locale su GitHub.
 - **K1 Archivi semplici e fornitori**, con il campo Categoria cliente sul cliente.
 - **Inviti degli utenti dall'interfaccia** (dopo K0): oggi si fanno con il comando; servono anche il servizio email SMTP aziendale e i modelli in italiano (vedi la voce del pilota).
 - **K2 Motore dei prezzi, parte 1** (modulo puro): importi, scaglioni a fette progressive, ricarico e regole con precedenza, arrotondamenti.
