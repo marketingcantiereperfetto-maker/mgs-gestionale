@@ -1,5 +1,7 @@
 export const loginPath = "/accedi";
 export const setPasswordPath = "/imposta-password";
+// Pagina mostrata quando i permessi non si possono verificare (nessun permesso, nessun ripiego).
+export const permissionsUnavailablePath = "/verifica-permessi";
 
 const publicPaths = [loginPath, "/auth/conferma"];
 

@@ -114,10 +114,8 @@ export default async function CustomerPage({ params, searchParams }: Props) {
         </Card>
       ) : null}
 
-      {/* Lo storico, come il registro, è del titolare: i nomi degli autori li legge solo lui. */}
-      {can(user, "audit_log.view") && can(user, "settings.manage") ? (
-        <AuditHistory filter={{ customerId: customer.id }} />
-      ) : null}
+      {/* Lo storico segue il registro: lo vede chi legge il registro (decisione del 6 novembre). */}
+      {can(user, "audit_log.view") ? <AuditHistory filter={{ customerId: customer.id }} /> : null}
     </main>
   );
 }

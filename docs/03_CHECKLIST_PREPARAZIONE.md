@@ -9,7 +9,7 @@
 - [ ] Il vecchio lavoro in una cartella di archivio **fuori** dal nuovo progetto, in sola consultazione.
 
 ## Materiali da mettere in `docs/riferimenti`
-- [ ] `ARCHITETTURA_v5.docx` (in `docs/`).
+- [ ] `ARCHITETTURA_v6.docx` (sostituisce la v5 dal 6 novembre 2026) (in `docs/`).
 - [ ] Tabelle prezzi Ediltelo Standard, schermate del gestionale attuale, web app abbigliamento.
 - [ ] **10-15 preventivi reali** con i prezzi finali e il ragionamento di calcolo (anche a mano).
 - [ ] Excel di materiali, lavorazioni, fornitori e categorie, e Excel dei clienti.

@@ -4,7 +4,7 @@ Incolla il testo qui sotto dopo aver aperto la cartella del progetto.
 
 ---
 
-Questo è un progetto nuovo, da zero. Leggi in ordine: `CLAUDE.md`, `docs/01_DECISIONI.md`, `docs/02_BACKLOG.md` e `docs/ARCHITETTURA_v5.docx`.
+Questo è un progetto nuovo, da zero. Leggi in ordine: `CLAUDE.md`, `docs/01_DECISIONI.md`, `docs/02_BACKLOG.md` e `docs/ARCHITETTURA_v6.docx`.
 
 Non scrivere ancora codice. Per prima cosa:
 

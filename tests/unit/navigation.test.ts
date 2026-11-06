@@ -3,6 +3,7 @@ import { findPage, navigation, visibleNavigation } from "@/lib/navigation";
 import { decidePageAccess } from "@/server/auth/page-access";
 import type { CurrentUser, Session } from "@/server/auth/current-user";
 import { can, type UserRole } from "@/server/auth/permissions";
+import { presetsBeforeK0 } from "./support/role-presets";
 
 function user(role: UserRole): CurrentUser {
   return {
@@ -12,6 +13,7 @@ function user(role: UserRole): CurrentUser {
     role,
     companyIds: [],
     isActive: true,
+    permissions: presetsBeforeK0[role],
   };
 }
 
@@ -87,7 +89,16 @@ describe("menu in alto", () => {
   it("l'amministrazione economica vede il controllo di gestione", () => {
     const menu = menuFor("finance_admin");
     expect(menu).toHaveProperty("Controllo di gestione");
-    expect(menu).not.toHaveProperty("Impostazioni");
+    // Il registro segue audit_log.view (decisione del 6 novembre 2026): delle Impostazioni
+    // l'amministrazione economica vede solo quello.
+    expect(menu["Impostazioni"]).toEqual(["Registro delle modifiche"]);
+  });
+
+  it("le altre voci delle Impostazioni restano del titolare", () => {
+    for (const role of ["sales_manager", "sales_consultant", "catalog_admin"] as const) {
+      expect(menuFor(role)).not.toHaveProperty("Impostazioni");
+    }
+    expect(menuFor("owner")["Impostazioni"]).toHaveLength(7);
   });
 });
 

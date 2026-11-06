@@ -1,5 +1,6 @@
 -- Nome del profilo e lettura del registro: ognuno cambia solo il proprio nome, mai il ruolo o
--- altri campi; le email degli autori le legge solo il titolare.
+-- altri campi; nomi ed email degli autori li legge chi legge il registro (titolare e
+-- amministrazione economica, decisione del 6 novembre 2026).
 -- Tutto avviene in una transazione annullata alla fine: nel database non resta nulla.
 begin;
 -- Il comando di test entra con un ruolo ridotto: si lavora come postgres, come le migrazioni.
@@ -51,12 +52,13 @@ select throws_ok(
 );
 select is((select count(*)::int from public.audit_log), 0, 'il consulente non legge il registro');
 
--- Amministrazione economica: legge il registro (decisione del 3 novembre), non le email.
+-- Amministrazione economica: legge il registro e, con la pagina del registro (decisione del
+-- 6 novembre 2026), anche i nomi degli autori.
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000000e3","role":"authenticated"}', true);
 select ok((select count(*) from public.audit_log) > 0, 'l''amministrazione economica legge il registro');
-select throws_ok(
-  $$select * from public.audit_actor_labels(array['00000000-0000-4000-8000-0000000000e1']::uuid[])$$,
-  '42501', null, 'l''amministrazione economica non legge le email degli autori'
+select is(
+  (select count(*)::int from public.audit_actor_labels(array['00000000-0000-4000-8000-0000000000e1']::uuid[])),
+  1, 'l''amministrazione economica legge i nomi degli autori del registro'
 );
 
 -- Titolare: nomi ed email.

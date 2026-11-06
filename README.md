@@ -7,7 +7,7 @@ Progetto nuovo, scritto da zero. Nessun codice proviene dal lavoro precedente.
 ## Dove si trova cosa
 
 - `CLAUDE.md`: istruzioni permanenti per Claude Code. Si legge a ogni sessione.
-- `docs/ARCHITETTURA_v5.docx`: documento di architettura. **Fonte di verità funzionale.**
+- `docs/ARCHITETTURA_v6.docx`: documento di architettura. **Fonte di verità funzionale.**
 - `docs/00_PROMPT_AVVIO.md`: testo da incollare nella prima sessione.
 - `docs/01_DECISIONI.md`: registro delle decisioni. Si aggiorna a ogni traguardo.
 - `docs/02_BACKLOG.md`: lavori in ordine di priorità, con criteri di accettazione.

@@ -1,11 +1,19 @@
 import { describe, expect, it } from "vitest";
-import { can, type Action, type AppUser, type UserRole } from "@/server/auth/permissions";
+import {
+  can,
+  permissionKeys,
+  type Action,
+  type AppUser,
+  type UserRole,
+} from "@/server/auth/permissions";
+import { presetsBeforeK0, presetUser } from "./support/role-presets";
 
 const companyA = "00000000-0000-0000-0000-00000000000a";
 const companyB = "00000000-0000-0000-0000-00000000000b";
 
+// Utenti con i soli preset del ruolo: i test qui sotto sono quelli di prima della K0, invariati.
 function user(role: UserRole, overrides: Partial<AppUser> = {}): AppUser {
-  return { id: "utente-prova", role, companyIds: [companyA], isActive: true, ...overrides };
+  return presetUser(role, { companyIds: [companyA], ...overrides });
 }
 
 describe("can: costi e margini", () => {
@@ -96,5 +104,36 @@ describe("can: casi di blocco", () => {
     const cataloghi = user("catalog_admin");
     expect(can(cataloghi, "catalog.manage", { companyId: companyA })).toBe(true);
     expect(can(cataloghi, "catalog.manage", { companyId: companyB })).toBe(false);
+  });
+});
+
+describe("can: facoltà per utente (K0a)", () => {
+  it("guarda le facoltà effettive, non il ruolo: permesso aggiunto", () => {
+    const consulente = user("sales_consultant");
+    expect(can(consulente, "customers.deactivate")).toBe(false);
+    const conPermesso = user("sales_consultant", {
+      permissions: [...presetsBeforeK0.sales_consultant, "customers.deactivate"],
+    });
+    expect(can(conPermesso, "customers.deactivate")).toBe(true);
+  });
+
+  it("permesso tolto: anche un ruolo che lo aveva non lo usa più", () => {
+    const responsabile = user("sales_manager", {
+      permissions: presetsBeforeK0.sales_manager.filter((action) => action !== "customers.edit"),
+    });
+    expect(can(responsabile, "customers.edit")).toBe(false);
+    expect(can(responsabile, "customers.view")).toBe(true);
+  });
+
+  it("il ruolo da solo non basta: un titolare senza facoltà caricate non può nulla", () => {
+    const vuoto = user("owner", { permissions: [] });
+    for (const action of permissionKeys) expect(can(vuoto, action)).toBe(false);
+  });
+
+  it("tutte le società solo con «gestire le società»", () => {
+    const economica = user("finance_admin", {
+      permissions: [...presetsBeforeK0.finance_admin, "companies.manage"],
+    });
+    expect(can(economica, "margins.view", { companyId: companyB })).toBe(true);
   });
 });
