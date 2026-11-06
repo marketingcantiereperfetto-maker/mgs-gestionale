@@ -17,6 +17,9 @@ export default defineConfig({
     baseURL: `http://localhost:${port}`,
     locale: "it-IT",
     timezoneId: "Europe/Rome",
+    // Se una prova fallisce resta la registrazione (pagine, richieste, schermate) per capirne
+    // il motivo; le prove riuscite non lasciano nulla.
+    trace: "retain-on-failure",
   },
   projects: [
     {

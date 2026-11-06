@@ -409,6 +409,27 @@ export type Database = {
           },
         ];
       };
+      permissions: {
+        Row: {
+          description: string;
+          is_sensitive: boolean;
+          key: string;
+          sort_order: number;
+        };
+        Insert: {
+          description: string;
+          is_sensitive?: boolean;
+          key: string;
+          sort_order: number;
+        };
+        Update: {
+          description?: string;
+          is_sensitive?: boolean;
+          key?: string;
+          sort_order?: number;
+        };
+        Relationships: [];
+      };
       profile_companies: {
         Row: {
           company_id: string;
@@ -472,6 +493,68 @@ export type Database = {
         };
         Relationships: [];
       };
+      role_permissions: {
+        Row: {
+          permission: string;
+          role: Database["public"]["Enums"]["user_role"];
+        };
+        Insert: {
+          permission: string;
+          role: Database["public"]["Enums"]["user_role"];
+        };
+        Update: {
+          permission?: string;
+          role?: Database["public"]["Enums"]["user_role"];
+        };
+        Relationships: [
+          {
+            foreignKeyName: "role_permissions_permission_fkey";
+            columns: ["permission"];
+            isOneToOne: false;
+            referencedRelation: "permissions";
+            referencedColumns: ["key"];
+          },
+        ];
+      };
+      user_permissions: {
+        Row: {
+          changed_at: string;
+          changed_by: string | null;
+          granted: boolean;
+          permission: string;
+          user_id: string;
+        };
+        Insert: {
+          changed_at?: string;
+          changed_by?: string | null;
+          granted: boolean;
+          permission: string;
+          user_id: string;
+        };
+        Update: {
+          changed_at?: string;
+          changed_by?: string | null;
+          granted?: boolean;
+          permission?: string;
+          user_id?: string;
+        };
+        Relationships: [
+          {
+            foreignKeyName: "user_permissions_permission_fkey";
+            columns: ["permission"];
+            isOneToOne: false;
+            referencedRelation: "permissions";
+            referencedColumns: ["key"];
+          },
+          {
+            foreignKeyName: "user_permissions_user_id_fkey";
+            columns: ["user_id"];
+            isOneToOne: false;
+            referencedRelation: "profiles";
+            referencedColumns: ["user_id"];
+          },
+        ];
+      };
     };
     Views: {
       [_ in never]: never;
@@ -479,6 +562,14 @@ export type Database = {
     Functions: {
       audit_actor_labels: {
         Args: { actor_ids: string[] };
+        Returns: {
+          email: string;
+          full_name: string;
+          user_id: string;
+        }[];
+      };
+      audit_people: {
+        Args: never;
         Returns: {
           email: string;
           full_name: string;
@@ -494,6 +585,18 @@ export type Database = {
       };
       health_check: { Args: never; Returns: Json };
       mark_password_set: { Args: never; Returns: undefined };
+      my_permissions: { Args: never; Returns: string[] };
+      my_session: {
+        Args: never;
+        Returns: {
+          company_ids: string[];
+          full_name: string;
+          is_active: boolean;
+          password_set_at: string;
+          permissions: string[];
+          role: Database["public"]["Enums"]["user_role"];
+        }[];
+      };
       search_customers: {
         Args: { search_text: string };
         Returns: {
@@ -527,6 +630,10 @@ export type Database = {
       };
       set_primary_customer_contact: {
         Args: { contact_id: string };
+        Returns: undefined;
+      };
+      set_user_permission: {
+        Args: { state: string; target_user: string; wanted: string };
         Returns: undefined;
       };
       similar_customers: {

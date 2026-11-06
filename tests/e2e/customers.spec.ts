@@ -197,7 +197,11 @@ test("amministrazione economica indica la società del gruppo", async ({ page })
   await page.getByRole("button", { name: "Salva" }).click();
   await expect(status(page, "Cliente salvato.")).toBeVisible();
   await expect(page.getByLabel("Società del gruppo")).toHaveValue(/[0-9a-f-]{36}/);
-  await expect(page.getByText("Storico delle modifiche")).toHaveCount(0);
+  // Lo storico segue il registro: l'amministrazione economica lo vede (decisione del
+  // 6 novembre 2026), sempre senza dati personali.
+  const history = page.locator("section").filter({ hasText: "Storico delle modifiche" });
+  await expect(history).toContainText(`ha modificato il cliente «${customerName}»`);
+  expect(await history.innerText()).not.toMatch(/RSSMRA|01234567897|pec\.prova|Via di Prova/);
   await page.reload();
   await expect(page.getByLabel("Società del gruppo").locator("option:checked")).toHaveText(
     groupCompany,

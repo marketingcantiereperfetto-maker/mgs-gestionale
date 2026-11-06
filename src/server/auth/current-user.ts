@@ -1,7 +1,7 @@
 import { cache } from "react";
 import { readSupabaseEnv } from "@/lib/supabase/env";
 import { createSupabaseServerClient } from "@/server/supabase";
-import type { AppUser } from "./permissions";
+import { isAction, type AppUser } from "./permissions";
 
 export type CurrentUser = AppUser & {
   email: string;
@@ -23,11 +23,9 @@ export const getSession = cache(async (): Promise<Session> => {
   if (!claims?.sub) return { status: "anonymous" };
 
   const email = typeof claims.email === "string" ? claims.email : "";
-  const { data: profile } = await supabase
-    .from("profiles")
-    .select("role, full_name, is_active, password_set_at, profile_companies(company_id)")
-    .eq("user_id", claims.sub)
-    .maybeSingle();
+  // Profilo e facoltà effettive (preset del ruolo ed eccezioni) in una sola chiamata.
+  const { data: profile, error } = await supabase.rpc("my_session").maybeSingle();
+  if (error) throw new Error("Sessione non letta");
 
   if (!profile || !profile.is_active) return { status: "without-profile", email };
   if (!profile.password_set_at) return { status: "password-required" };
@@ -40,7 +38,8 @@ export const getSession = cache(async (): Promise<Session> => {
       fullName: profile.full_name,
       role: profile.role,
       isActive: profile.is_active,
-      companyIds: profile.profile_companies.map((link) => link.company_id),
+      companyIds: profile.company_ids,
+      permissions: profile.permissions.filter(isAction),
     },
   };
 });

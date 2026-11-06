@@ -132,6 +132,8 @@ const expectedMenus: Record<UserRole, string[]> = {
     "Clienti",
     "Statistiche",
     "Controllo di gestione",
+    // Solo per il registro delle modifiche (decisione del 6 novembre 2026).
+    "Impostazioni",
     "Manuali",
   ],
 };

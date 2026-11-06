@@ -341,7 +341,8 @@ export const navigation: NavSection[] = [
   {
     label: "Impostazioni",
     base: "/impostazioni",
-    requires: "settings.manage",
+    // Ogni voce ha il suo permesso: il registro lo legge anche chi non usa le Impostazioni
+    // (amministrazione economica, decisione del 6 novembre 2026).
     groups: [
       [
         {
@@ -358,6 +359,7 @@ export const navigation: NavSection[] = [
           title: "Reparti e macchinari",
           subtitle: "Reparti produttivi e macchinari.",
           emptyState: `Nessun reparto inserito. ${catalogLater}`,
+          requires: "settings.manage",
         },
         {
           label: "Utenti e ruoli",
@@ -376,6 +378,7 @@ export const navigation: NavSection[] = [
           title: "Pagamenti",
           subtitle: "Metodi e condizioni di pagamento, con le rate.",
           emptyState: "Nessuna condizione di pagamento inserita. Arriveranno prima dei preventivi.",
+          requires: "settings.manage",
         },
         {
           label: "Aliquote e unità di misura",
@@ -383,6 +386,7 @@ export const navigation: NavSection[] = [
           title: "Aliquote e unità di misura",
           subtitle: "Aliquote IVA e unità di misura usate nel catalogo.",
           emptyState: `Nessuna aliquota né unità di misura inserita. ${catalogLater}`,
+          requires: "settings.manage",
         },
         {
           label: "Registro delle modifiche",
@@ -398,6 +402,7 @@ export const navigation: NavSection[] = [
           title: "Importazioni",
           subtitle: "Caricamento di archivi da Excel con anteprima.",
           emptyState: `Nessuna importazione eseguita. ${catalogLater}`,
+          requires: "settings.manage",
         },
       ],
     ],

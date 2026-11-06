@@ -188,13 +188,11 @@ export async function listAudit(filters: AuditFilters, limit = auditPageSize): P
   };
 }
 
-// Persone per il filtro: tutti i profili, con nome o email.
+// Persone per il filtro: tutti i profili, con nome o email, da una funzione riservata a chi
+// legge il registro (i profili degli altri non si leggono direttamente).
 export async function listAuditPeople(): Promise<{ id: string; label: string }[]> {
   const supabase = await createSupabaseServerClient();
-  const { data: profiles } = await supabase.from("profiles").select("user_id");
-  const ids = (profiles ?? []).map((profile) => profile.user_id);
-  if (ids.length === 0) return [];
-  const { data } = await supabase.rpc("audit_actor_labels", { actor_ids: ids });
+  const { data } = await supabase.rpc("audit_people");
   return (data ?? [])
     .map((row) => ({ id: row.user_id, label: row.full_name ?? row.email }))
     .sort((a, b) => a.label.localeCompare(b.label, "it"));
