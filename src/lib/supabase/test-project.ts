@@ -27,3 +27,30 @@ export function projectRefFromDbUrl(address: string | undefined): string | null 
     return null;
   }
 }
+
+// Supabase locale in Docker (T0): le prove automatiche girano solo qui, mai sul cloud.
+// Le porte sono quelle di supabase/config.toml.
+export const localApiPort = "58321";
+export const localDbPort = "58322";
+const localHosts = new Set(["127.0.0.1", "localhost"]);
+
+export function isLocalSupabase(address: string | undefined): boolean {
+  if (!address) return false;
+  try {
+    const url = new URL(address);
+    return url.protocol === "http:" && localHosts.has(url.hostname) && url.port === localApiPort;
+  } catch {
+    return false;
+  }
+}
+
+export function isLocalDatabase(address: string | undefined): boolean {
+  if (!address) return false;
+  try {
+    const url = new URL(address);
+    const isPostgres = url.protocol === "postgres:" || url.protocol === "postgresql:";
+    return isPostgres && localHosts.has(url.hostname) && url.port === localDbPort;
+  } catch {
+    return false;
+  }
+}

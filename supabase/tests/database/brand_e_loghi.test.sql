@@ -7,6 +7,15 @@ set local search_path = public, extensions;
 
 select plan(17);
 
+-- La riga creata qui ha una chiave di creazione casuale: la prova la ritrova per chiave
+-- (identificativo), mai per nome, così altre righe con lo stesso testo non la confondono.
+create temporary table chiavi (label text primary key, key uuid not null default gen_random_uuid()) on commit drop;
+insert into chiavi (label) values ('Brand Inventato');
+grant select on chiavi to authenticated;
+create function pg_temp.key(label text) returns uuid language sql as $$
+  select key from chiavi where chiavi.label = key.label;
+$$;
+
 insert into auth.users (id, email, encrypted_password, aud, role) values
   ('00000000-0000-4000-8000-0000000000b1', 'titolare@prova.test', '', 'authenticated', 'authenticated'),
   ('00000000-0000-4000-8000-0000000000b2', 'consulente@prova.test', '', 'authenticated', 'authenticated');
@@ -32,20 +41,20 @@ select throws_ok(
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000000b1","role":"authenticated"}', true);
 select lives_ok(
   $$insert into public.brands (name, creation_key)
-    values ('Brand Inventato', '00000000-0000-4000-8000-0000000000f1')$$,
+    values ('Brand Inventato', pg_temp.key('Brand Inventato'))$$,
   'il titolare crea un brand'
 );
 select throws_ok(
   $$insert into public.brands (name) values ('  brand   INVENTATO ')$$,
   '23505', null, 'due brand con lo stesso nome (maiuscole e spazi a parte) non sono ammessi'
 );
-update public.brands set is_active = false where id = (select id from public.brands where name = 'Brand Inventato');
+update public.brands set is_active = false where id = (select id from public.brands where creation_key = pg_temp.key('Brand Inventato'));
 select throws_ok(
   $$insert into public.brands (name) values ('Brand Inventato')$$,
   '23505', null, 'il nome resta occupato anche se il brand è disattivato'
 );
 select throws_ok(
-  $$insert into public.brands (name, creation_key) values ('Altro Brand', '00000000-0000-4000-8000-0000000000f1')$$,
+  $$insert into public.brands (name, creation_key) values ('Altro Brand', pg_temp.key('Brand Inventato'))$$,
   '23505', null, 'un secondo invio dello stesso brand non crea un doppione'
 );
 
@@ -62,7 +71,7 @@ select lives_ok(
 -- Collegamenti: il titolare collega e scollega.
 select lives_ok(
   $$insert into public.company_brands (company_id, brand_id)
-    values ('00000000-0000-4000-8000-0000000000d1', (select id from public.brands where name = 'Brand Inventato'))$$,
+    values ('00000000-0000-4000-8000-0000000000d1', (select id from public.brands where creation_key = pg_temp.key('Brand Inventato')))$$,
   'il titolare collega un brand a una società'
 );
 
@@ -73,7 +82,7 @@ select lives_ok(
   'il titolare carica un logo'
 );
 select throws_ok(
-  $$update public.brands set logo_path = 'brands/../altro.svg' where id = (select id from public.brands where name = 'Brand Inventato')$$,
+  $$update public.brands set logo_path = 'brands/../altro.svg' where id = (select id from public.brands where creation_key = pg_temp.key('Brand Inventato'))$$,
   '23514', null, 'il percorso del logo deve essere quello generato dal server'
 );
 
@@ -85,7 +94,7 @@ select is(
 );
 select throws_ok(
   $$insert into public.company_brands (company_id, brand_id)
-    values ('00000000-0000-4000-8000-0000000000d1', (select id from public.brands where name = 'Brand Inventato'))$$,
+    values ('00000000-0000-4000-8000-0000000000d1', (select id from public.brands where creation_key = pg_temp.key('Brand Inventato')))$$,
   '42501', null, 'il consulente non collega brand'
 );
 with removed as (delete from public.company_brands returning 1)
@@ -94,7 +103,7 @@ select is((select count(*)::int from removed), 0, 'il consulente non scollega br
 -- Titolare: scollega; il registro conserva il collegamento tolto.
 select set_config('request.jwt.claims', '{"sub":"00000000-0000-4000-8000-0000000000b1","role":"authenticated"}', true);
 select lives_ok(
-  $$delete from public.company_brands where brand_id = (select id from public.brands where name = 'Brand Inventato')$$,
+  $$delete from public.company_brands where brand_id = (select id from public.brands where creation_key = pg_temp.key('Brand Inventato'))$$,
   'il titolare scollega il brand'
 );
 set local role postgres;

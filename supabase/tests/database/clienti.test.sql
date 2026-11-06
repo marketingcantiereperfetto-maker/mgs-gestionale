@@ -7,6 +7,15 @@ set local search_path = public, extensions;
 
 select plan(18);
 
+-- La riga creata qui ha una chiave di creazione casuale: la prova la ritrova per chiave
+-- (identificativo), mai per nome, così altre righe con lo stesso testo non la confondono.
+create temporary table chiavi (label text primary key, key uuid not null default gen_random_uuid()) on commit drop;
+insert into chiavi (label) values ('Cliente Inventato');
+grant select on chiavi to authenticated;
+create function pg_temp.key(label text) returns uuid language sql as $$
+  select key from chiavi where chiavi.label = key.label;
+$$;
+
 insert into auth.users (id, email, encrypted_password, aud, role) values
   ('00000000-0000-4000-8000-0000000000f1', 'titolare@prova.test', '', 'authenticated', 'authenticated'),
   ('00000000-0000-4000-8000-0000000000f2', 'consulente@prova.test', '', 'authenticated', 'authenticated'),
@@ -45,19 +54,19 @@ set local role authenticated;
 -- Consulente: crea con il solo nome e modifica; non disattiva, non indica la società del gruppo.
 select pg_temp.act_as('consulente');
 select lives_ok(
-  $$insert into public.customers (name) values ('Cliente Inventato')$$,
+  $$insert into public.customers (name, creation_key) values ('Cliente Inventato', pg_temp.key('Cliente Inventato'))$$,
   'il consulente crea un cliente con il solo nome'
 );
 select lives_ok(
-  $$update public.customers set tax_code = 'RSSMRA85T10A562S', subject_type = 'private' where name = 'Cliente Inventato'$$,
+  $$update public.customers set tax_code = 'RSSMRA85T10A562S', subject_type = 'private' where creation_key = pg_temp.key('Cliente Inventato')$$,
   'il consulente modifica i dati'
 );
 select throws_ok(
-  $$update public.customers set is_active = false where name = 'Cliente Inventato'$$,
+  $$update public.customers set is_active = false where creation_key = pg_temp.key('Cliente Inventato')$$,
   '42501', null, 'il consulente non disattiva i clienti'
 );
 select throws_ok(
-  $$update public.customers set group_company_id = '00000000-0000-4000-8000-0000000000c9' where name = 'Cliente Inventato'$$,
+  $$update public.customers set group_company_id = '00000000-0000-4000-8000-0000000000c9' where creation_key = pg_temp.key('Cliente Inventato')$$,
   '42501', null, 'il consulente non indica la società del gruppo'
 );
 select throws_ok(
@@ -65,7 +74,7 @@ select throws_ok(
   '42501', null, 'nemmeno alla creazione'
 );
 select throws_ok(
-  $$update public.customers set pec = 'non-una-pec' where name = 'Cliente Inventato'$$,
+  $$update public.customers set pec = 'non-una-pec' where creation_key = pg_temp.key('Cliente Inventato')$$,
   '23514', null, 'una PEC nel formato sbagliato è rifiutata anche dal database'
 );
 select throws_ok(
@@ -90,29 +99,29 @@ select is((select count(*)::int from changed), 0, 'l''amministrazione cataloghi 
 -- Amministrazione economica: società del gruppo sì, disattivare no.
 select pg_temp.act_as('economica');
 select lives_ok(
-  $$update public.customers set group_company_id = '00000000-0000-4000-8000-0000000000c9' where name = 'Cliente Inventato'$$,
+  $$update public.customers set group_company_id = '00000000-0000-4000-8000-0000000000c9' where creation_key = pg_temp.key('Cliente Inventato')$$,
   'l''amministrazione economica indica la società del gruppo'
 );
 select throws_ok(
-  $$update public.customers set is_active = false where name = 'Cliente Inventato'$$,
+  $$update public.customers set is_active = false where creation_key = pg_temp.key('Cliente Inventato')$$,
   '42501', null, 'l''amministrazione economica non disattiva'
 );
 
 -- Responsabile commerciale: disattiva e riattiva; non la società del gruppo.
 select pg_temp.act_as('responsabile');
 select lives_ok(
-  $$update public.customers set is_active = false where name = 'Cliente Inventato'$$,
+  $$update public.customers set is_active = false where creation_key = pg_temp.key('Cliente Inventato')$$,
   'il responsabile commerciale disattiva'
 );
 select throws_ok(
-  $$update public.customers set group_company_id = null where name = 'Cliente Inventato'$$,
+  $$update public.customers set group_company_id = null where creation_key = pg_temp.key('Cliente Inventato')$$,
   '42501', null, 'il responsabile commerciale non cambia la società del gruppo'
 );
 
 -- Titolare: tutto.
 select pg_temp.act_as('titolare');
 select lives_ok(
-  $$update public.customers set is_active = true, group_company_id = null where name = 'Cliente Inventato'$$,
+  $$update public.customers set is_active = true, group_company_id = null where creation_key = pg_temp.key('Cliente Inventato')$$,
   'il titolare riattiva e cambia la società del gruppo'
 );
 
@@ -123,7 +132,8 @@ select throws_ok($$select * from public.customers$$, '42501', null, 'chi non è 
 -- Registro: ogni modifica con autore.
 set local role postgres;
 select ok(
-  (select count(*) from public.audit_log where table_name = 'customers' and actor_id is not null) >= 5,
+  (select count(*) from public.audit_log where table_name = 'customers' and actor_id is not null
+    and record_id = (select id::text from public.customers where creation_key = pg_temp.key('Cliente Inventato'))) >= 5,
   'le modifiche dei clienti sono nel registro con l''autore'
 );
 

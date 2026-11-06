@@ -6,32 +6,37 @@ import {
   canUseTemporaryUsers,
   createTemporaryUser,
   deleteTemporaryUser,
-  signIn,
+  openSession,
+  roleUser,
   type TemporaryUser,
+  type TestUser,
 } from "./support/temporary-users";
 
 // Permessi per utente (K0a): un permesso aggiunto o tolto cambia davvero cosa si può fare.
 // La pagina per gestire i permessi arriva con K0b: qui le eccezioni si scrivono direttamente
-// nel database di prova. Dati e utenti inventati, cancellati alla fine.
-test.skip(!canUseTemporaryUsers, "servono le variabili del database di prova in .env.local");
+// nel database locale. Dati e utenti inventati.
+test.skip(!canUseTemporaryUsers, "servono le variabili del Supabase locale (npm run test:e2e)");
 test.describe.configure({ mode: "serial" });
 
 const mine = runPrefix(randomUUID().slice(0, 8));
 const customerName = `${mine} Cliente permessi`;
 let consultant: TemporaryUser;
-let finance: TemporaryUser;
+let finance: TestUser;
+let customerId = "";
 let customerPath = "";
 
 test.beforeAll(async () => {
   test.setTimeout(120_000);
+  // Consulente dedicata: i suoi permessi cambiano durante le prove.
   consultant = await createTemporaryUser("sales_consultant");
-  finance = await createTemporaryUser("finance_admin");
+  finance = roleUser("finance_admin");
   const { data, error } = await admin()
     .from("customers")
     .insert({ name: customerName })
     .select("id")
     .single();
   if (error) throw new Error(`Cliente di prova non creato: ${error.message}`);
+  customerId = data.id;
   customerPath = `/clienti/${data.id}`;
 });
 
@@ -56,7 +61,7 @@ async function openCustomer(page: Page) {
 }
 
 test("solo preset: la consulente modifica ma non disattiva", async ({ page }) => {
-  await signIn(page, consultant);
+  await openSession(page, consultant);
   await openCustomer(page);
   await expect(page.getByRole("heading", { name: "Disattiva il cliente" })).toHaveCount(0);
   await expect(page.getByRole("button", { name: "Salva", exact: true })).toBeVisible();
@@ -64,7 +69,7 @@ test("solo preset: la consulente modifica ma non disattiva", async ({ page }) =>
 
 test("permesso aggiunto: la consulente disattiva e riattiva il cliente", async ({ page }) => {
   await setException(consultant, "customers.deactivate", true);
-  await signIn(page, consultant);
+  await openSession(page, consultant);
   await openCustomer(page);
   await expect(page.getByRole("heading", { name: "Disattiva il cliente" })).toBeVisible();
   await page.getByRole("button", { name: "Disattiva", exact: true }).click();
@@ -75,7 +80,7 @@ test("permesso aggiunto: la consulente disattiva e riattiva il cliente", async (
 
 test("permesso tolto: senza «modificare clienti» il salvataggio è rifiutato", async ({ page }) => {
   await setException(consultant, "customers.edit", false);
-  await signIn(page, consultant);
+  await openSession(page, consultant);
   await openCustomer(page);
   await page.getByLabel("Comune").fill("Comune Non Permesso");
   await page.getByRole("button", { name: "Salva", exact: true }).click();
@@ -85,14 +90,14 @@ test("permesso tolto: senza «modificare clienti» il salvataggio è rifiutato",
   const { data } = await admin()
     .from("customers")
     .select("address_city")
-    .eq("name", customerName)
+    .eq("id", customerId)
     .single();
   expect(data?.address_city).toBeNull();
 });
 
 test("permesso tolto: senza «vedere i clienti» la sezione sparisce", async ({ page }) => {
   await setException(consultant, "customers.view", false);
-  await signIn(page, consultant);
+  await openSession(page, consultant);
   await page.goto("/");
   const menu = page.getByRole("navigation", { name: "Menu principale" });
   await expect(menu.getByRole("button", { name: "Clienti", exact: true })).toHaveCount(0);
@@ -101,7 +106,7 @@ test("permesso tolto: senza «vedere i clienti» la sezione sparisce", async ({ 
 });
 
 test("l'amministrazione economica apre il registro delle modifiche", async ({ page }) => {
-  await signIn(page, finance);
+  await openSession(page, finance);
   await page.goto("/");
   const menu = page.getByRole("navigation", { name: "Menu principale" });
   await menu.getByRole("button", { name: "Impostazioni", exact: true }).click();
@@ -114,7 +119,7 @@ test("l'amministrazione economica apre il registro delle modifiche", async ({ pa
 });
 
 test("permessi non verificati: messaggio chiaro con «Riprova»", async ({ page }) => {
-  await signIn(page, consultant);
+  await openSession(page, consultant);
   await page.goto("/verifica-permessi?da=%2Fclienti");
   // C'è anche l'avviso di navigazione di Next.js (anch'esso «alert»): si cerca il messaggio.
   await expect(

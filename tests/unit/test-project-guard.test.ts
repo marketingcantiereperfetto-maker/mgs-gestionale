@@ -33,3 +33,27 @@ describe("indirizzo diretto del database: riferimento del progetto senza rete", 
     expect(projectRefFromDbUrl(undefined)).toBeNull();
   });
 });
+
+describe("le prove automatiche girano solo sul Supabase locale", () => {
+  it("riconosce solo l'API locale sulla porta di supabase/config.toml", async () => {
+    const { isLocalSupabase } = await import("@/lib/supabase/test-project");
+    expect(isLocalSupabase("http://127.0.0.1:58321")).toBe(true);
+    expect(isLocalSupabase("http://localhost:58321")).toBe(true);
+    expect(isLocalSupabase("http://127.0.0.1:54321")).toBe(false);
+    expect(isLocalSupabase("https://127.0.0.1:58321")).toBe(false);
+    expect(isLocalSupabase("https://rozukexrurbadsiznmby.supabase.co")).toBe(false);
+    expect(isLocalSupabase("http://127.0.0.1.esempio.it:58321")).toBe(false);
+    expect(isLocalSupabase(undefined)).toBe(false);
+  });
+
+  it("riconosce solo il database locale sulla porta di supabase/config.toml", async () => {
+    const { isLocalDatabase } = await import("@/lib/supabase/test-project");
+    expect(isLocalDatabase("postgresql://postgres:x@127.0.0.1:58322/postgres")).toBe(true);
+    expect(isLocalDatabase("postgresql://postgres:x@127.0.0.1:54322/postgres")).toBe(false);
+    expect(
+      isLocalDatabase("postgresql://postgres:x@db.rozukexrurbadsiznmby.supabase.co:58322/postgres"),
+    ).toBe(false);
+    expect(isLocalDatabase("http://127.0.0.1:58322")).toBe(false);
+    expect(isLocalDatabase("")).toBe(false);
+  });
+});

@@ -4,15 +4,15 @@ import { deleteTestBrands, deleteTestCompanies, runPrefix } from "./support/test
 import {
   admin,
   canUseTemporaryUsers,
-  createTemporaryUser,
   deleteTemporaryUser,
-  signIn,
-  type TemporaryUser,
+  openSession,
+  roleUser,
+  type TestUser,
 } from "./support/temporary-users";
 
 // Dopo un salvataggio i campi mostrano sempre i dati salvati, senza ricaricare la pagina
 // (regola di CLAUDE.md). Dati inventati, cancellati alla fine, solo sul progetto di prova.
-test.skip(!canUseTemporaryUsers, "servono le variabili del database di prova in .env.local");
+test.skip(!canUseTemporaryUsers, "servono le variabili del Supabase locale (npm run test:e2e)");
 test.describe.configure({ mode: "serial" });
 
 const mine = runPrefix(randomUUID().slice(0, 8));
@@ -20,13 +20,13 @@ const mine = runPrefix(randomUUID().slice(0, 8));
 const run = randomUUID().slice(0, 8);
 const companyName = `${mine} Stato salvato ${run} Srl`;
 const brandName = `${mine} Brand stato ${run}`;
-let owner: TemporaryUser;
+let owner: TestUser;
 let companyId = "";
 let brandId = "";
 
 test.beforeAll(async () => {
   test.setTimeout(120_000);
-  owner = await createTemporaryUser("owner");
+  owner = roleUser("owner");
   const company = await admin()
     .from("companies")
     .insert({ legal_name: companyName })
@@ -55,7 +55,7 @@ const status = (page: Page, text: string) => page.getByRole("status").filter({ h
 test("collegamento: la spunta resta dopo il salvataggio, dopo il ricaricamento e quando si toglie", async ({
   page,
 }) => {
-  await signIn(page, owner);
+  await openSession(page, owner);
   await openReady(page, `/impostazioni/societa-e-brand/brand/${brandId}`);
   const box = () => page.getByRole("checkbox", { name: companyName });
   const save = page.getByRole("button", { name: "Salva collegamenti" });
@@ -85,7 +85,7 @@ test("collegamento: la spunta resta dopo il salvataggio, dopo il ricaricamento e
 test("dati della società: dopo «Salva» i campi mostrano i valori salvati (anche il paese)", async ({
   page,
 }) => {
-  await signIn(page, owner);
+  await openSession(page, owner);
   await openReady(page, `/impostazioni/societa-e-brand/societa/${companyId}`);
   const country = () => page.getByLabel("Paese (codice a due lettere)");
 
@@ -113,7 +113,7 @@ test("dati della società: dopo «Salva» i campi mostrano i valori salvati (anc
 });
 
 test("nome del brand: dopo «Salva» il campo mostra il nome salvato", async ({ page }) => {
-  await signIn(page, owner);
+  await openSession(page, owner);
   await openReady(page, `/impostazioni/societa-e-brand/brand/${brandId}`);
   const name = page.getByLabel("Nome del brand");
   await name.fill(`  ${brandName}   Nuovo `);

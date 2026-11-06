@@ -1,52 +1,21 @@
-import { expect, test, type Browser, type BrowserContext, type Page } from "@playwright/test";
+import { expect, test, type Browser, type Page } from "@playwright/test";
 import {
   canUseTemporaryUsers,
   createTemporaryUser,
-  deleteLeftoverTemporaryUsers,
   deleteTemporaryUser,
+  roles,
+  sessionFile,
   signIn,
-  type TemporaryUser,
 } from "./support/temporary-users";
 import type { UserRole } from "../../src/server/auth/permissions";
 
-// Prove con utenti veri del database di prova, uno per ruolo, creati qui e cancellati alla
-// fine. Senza .env.local (per esempio su GitHub) vengono saltate.
-test.skip(!canUseTemporaryUsers, "servono le variabili del database di prova in .env.local");
+// Prove con un utente vero per ruolo: le sessioni salvate da accessi.setup.ts (un solo accesso
+// per ruolo a ogni giro).
+test.skip(!canUseTemporaryUsers, "servono le variabili del Supabase locale (npm run test:e2e)");
 test.describe.configure({ mode: "serial" });
 
-const roles: UserRole[] = [
-  "owner",
-  "sales_manager",
-  "sales_consultant",
-  "catalog_admin",
-  "finance_admin",
-];
-const users = new Map<UserRole, TemporaryUser>();
-type StorageState = Awaited<ReturnType<BrowserContext["storageState"]>>;
-const sessions = new Map<UserRole, StorageState>();
-
-test.beforeAll(async ({ browser }) => {
-  test.setTimeout(120_000);
-  await deleteLeftoverTemporaryUsers();
-  for (const role of roles) {
-    const user = await createTemporaryUser(role);
-    users.set(role, user);
-    // Un solo accesso per ruolo: le prove riusano la sessione salvata.
-    const context = await browser.newContext();
-    const page = await context.newPage();
-    await signIn(page, user);
-    sessions.set(role, await context.storageState());
-    await context.close();
-  }
-});
-
-test.afterAll(async () => {
-  test.setTimeout(120_000);
-  for (const user of users.values()) await deleteTemporaryUser(user);
-});
-
 async function pageAs(browser: Browser, role: UserRole): Promise<Page> {
-  const context = await browser.newContext({ storageState: sessions.get(role)! });
+  const context = await browser.newContext({ storageState: sessionFile(role) });
   return context.newPage();
 }
 
@@ -201,13 +170,16 @@ test("tendine da tastiera: frecce per scorrere, Esc per chiudere", async ({ brow
 test("il menu utente mostra nome e ruolo, ed Esci porta alla pagina di accesso", async ({
   browser,
 }) => {
-  // Si usa un accesso dedicato: uscire chiude la sessione salvata del ruolo.
+  // Prova sull'accesso stesso: utente e accesso dedicati, perché uscire chiude tutte le sessioni
+  // dell'utente (anche quella salvata del ruolo).
+  const user = await createTemporaryUser("sales_consultant");
   const context = await browser.newContext();
   const page = await context.newPage();
-  await signIn(page, users.get("sales_consultant")!);
+  await signIn(page, user);
   await page.getByRole("button", { name: /Menu utente/ }).click();
   await expect(page.getByText("Consulente", { exact: true })).toBeVisible();
   await page.getByRole("button", { name: "Esci" }).click();
   await expect(page).toHaveURL(/\/accedi$/);
   await context.close();
+  await deleteTemporaryUser(user);
 });

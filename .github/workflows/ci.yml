@@ -1,12 +1,31 @@
 name: Controlli
 
+# Tre lavori in parallelo (T0): il tempo totale è quello del più lento.
+# - controlli veloci: tipi, lint, formato, prove di unità, build;
+# - prove del database e prove nel browser: ciascuno con il suo Supabase locale in Docker,
+#   azzerato a ogni giro. Mai il cloud: nessun segreto serve qui.
+# Le richieste che cambiano solo documenti (docs/ o file .md) saltano le prove pesanti.
+
 on:
   push:
     branches: [main]
   pull_request:
 
+# Un nuovo invio sulla stessa richiesta ferma il giro precedente (meno minuti consumati).
+concurrency:
+  group: controlli-${{ github.ref }}
+  cancel-in-progress: ${{ github.event_name == 'pull_request' }}
+
+env:
+  # Versioni dei servizi uguali a quelle del progetto cloud (come in supabase/.temp in locale).
+  SUPABASE_POSTGRES_VERSION: 17.11.0.011
+  SUPABASE_GOTRUE_VERSION: v2.197.0
+  SUPABASE_REST_VERSION: v14.18
+  SUPABASE_STORAGE_VERSION: v1.84.25
+
 jobs:
-  controlli:
+  controlli-veloci:
+    name: Controlli veloci
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v7
@@ -17,7 +36,86 @@ jobs:
       - run: npm ci
       - run: npm run check
       - run: npm run build
-      - run: npx playwright install --with-deps chromium
-      - run: npm run test:e2e
+
+  prove-database:
+    name: Prove del database
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Solo documenti?
+        id: filtro
+        run: .github/scripts/solo-documenti.sh
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v7
+        if: steps.filtro.outputs.pesanti == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - if: steps.filtro.outputs.pesanti == 'true'
+        run: npm ci
+      - name: Immagini di Supabase dalla cache
+        if: steps.filtro.outputs.pesanti == 'true'
+        id: immagini
+        uses: actions/cache@v6
+        with:
+          path: /tmp/immagini-supabase.tar
+          key: immagini-db-${{ env.SUPABASE_POSTGRES_VERSION }}-${{ env.SUPABASE_GOTRUE_VERSION }}-${{ env.SUPABASE_REST_VERSION }}-${{ env.SUPABASE_STORAGE_VERSION }}-${{ hashFiles('package-lock.json') }}
+      - name: Supabase locale
+        if: steps.filtro.outputs.pesanti == 'true'
+        run: .github/scripts/avvia-supabase.sh "${{ steps.immagini.outputs.cache-hit }}"
+      - if: steps.filtro.outputs.pesanti == 'true'
+        run: npm run test:db
+      - name: Immagini nella cache (solo la prima volta)
+        if: steps.filtro.outputs.pesanti == 'true' && steps.immagini.outputs.cache-hit != 'true'
+        run: .github/scripts/salva-immagini.sh
+
+  prove-browser:
+    name: Prove nel browser
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v7
+        with:
+          fetch-depth: 0
+      - name: Solo documenti?
+        id: filtro
+        run: .github/scripts/solo-documenti.sh
+        env:
+          BASE: ${{ github.event.pull_request.base.sha || github.event.before }}
+          HEAD: ${{ github.event.pull_request.head.sha || github.sha }}
+      - uses: actions/setup-node@v7
+        if: steps.filtro.outputs.pesanti == 'true'
+        with:
+          node-version-file: .nvmrc
+          cache: npm
+      - if: steps.filtro.outputs.pesanti == 'true'
+        run: npm ci
+      - name: Immagini di Supabase dalla cache
+        if: steps.filtro.outputs.pesanti == 'true'
+        id: immagini
+        uses: actions/cache@v6
+        with:
+          path: /tmp/immagini-supabase.tar
+          key: immagini-browser-${{ env.SUPABASE_POSTGRES_VERSION }}-${{ env.SUPABASE_GOTRUE_VERSION }}-${{ env.SUPABASE_REST_VERSION }}-${{ env.SUPABASE_STORAGE_VERSION }}-${{ hashFiles('package-lock.json') }}
+      - name: Supabase locale
+        if: steps.filtro.outputs.pesanti == 'true'
+        run: .github/scripts/avvia-supabase.sh "${{ steps.immagini.outputs.cache-hit }}"
+      - if: steps.filtro.outputs.pesanti == 'true'
+        run: npx playwright install --with-deps chromium
+      - if: steps.filtro.outputs.pesanti == 'true'
+        run: npm run test:e2e
         env:
           CI: "true"
+      - name: Immagini nella cache (solo la prima volta)
+        if: steps.filtro.outputs.pesanti == 'true' && steps.immagini.outputs.cache-hit != 'true'
+        run: .github/scripts/salva-immagini.sh
+      - name: Registrazioni delle prove fallite
+        if: failure()
+        uses: actions/upload-artifact@v7
+        with:
+          name: prove-browser-fallite
+          path: test-results/
+          retention-days: 7

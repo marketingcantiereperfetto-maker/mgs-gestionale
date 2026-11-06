@@ -6,28 +6,35 @@ import {
   canUseTemporaryUsers,
   createTemporaryUser,
   deleteTemporaryUser,
-  signIn,
-  type TemporaryUser,
+  openSession,
+  roleUser,
+  type TestUser,
 } from "./support/temporary-users";
 
 // Referenti, indirizzi di consegna e ricerca per email, con dati inventati cancellati alla fine
-// (solo sul progetto di prova). Senza .env.local vengono saltati.
-test.skip(!canUseTemporaryUsers, "servono le variabili del database di prova in .env.local");
+// (solo sul Supabase locale).
+test.skip(!canUseTemporaryUsers, "servono le variabili del Supabase locale (npm run test:e2e)");
 test.describe.configure({ mode: "serial" });
 
 const mine = runPrefix(randomUUID().slice(0, 8));
 const customerName = `${mine} Referenti Srl`;
 // Parte dell'email unica per questa esecuzione, per la ricerca.
 const mailbox = `uff${randomUUID().slice(0, 8)}`;
-const users: Partial<Record<"owner" | "consultant" | "manager" | "busy", TemporaryUser>> = {};
+// Nomi e vie con un codice casuale: nessuna prova dipende da valori uguali di altre prove.
+const code = randomUUID().slice(0, 6);
+const annaName = `Anna Inventata ${code}`;
+const brunoName = `Bruno Inventato ${code}`;
+const street = `Via Inventata ${code} 1`;
+const foreignStreet = `Rue Inventée ${code} 4`;
+const users: Partial<Record<"owner" | "consultant" | "manager" | "busy", TestUser>> = {};
 let customerUrl = "";
 let customerId = "";
 
 test.beforeAll(async () => {
   test.setTimeout(120_000);
-  users.owner = await createTemporaryUser("owner");
-  users.consultant = await createTemporaryUser("sales_consultant");
-  users.manager = await createTemporaryUser("sales_manager");
+  users.owner = roleUser("owner");
+  users.consultant = roleUser("sales_consultant");
+  users.manager = roleUser("sales_manager");
   // Usata solo per superare il limite delle ricerche nell'elenco (resta bloccata un minuto).
   users.busy = await createTemporaryUser("sales_consultant");
   const { data, error } = await admin()
@@ -63,20 +70,20 @@ const addressRow = (page: Page, text: string) =>
 test("consulente: aggiunge referenti; il primo è principale; email e telefono controllati", async ({
   page,
 }) => {
-  await signIn(page, users.consultant!);
+  await openSession(page, users.consultant!);
   await openReady(page, customerUrl);
   const card = contacts(page);
   await expect(card).toContainText("Nessun referente.");
 
   await card.getByRole("button", { name: "Aggiungi un referente" }).click();
-  await card.getByLabel("Nome", { exact: true }).fill("Anna Inventata");
+  await card.getByLabel("Nome", { exact: true }).fill(annaName);
   await card.getByLabel("Email (facoltativa)").fill("anna@senzapunto");
   await card.getByLabel("Telefono (facoltativo)").fill("12-345");
   await card.getByRole("button", { name: "Aggiungi referente" }).click();
   await expect(card.getByText("Email non valida.")).toBeVisible();
   await expect(card.getByText(/^Telefono non valido/)).toBeVisible();
   // I valori scritti restano dopo l'errore.
-  await expect(card.getByLabel("Nome", { exact: true })).toHaveValue("Anna Inventata");
+  await expect(card.getByLabel("Nome", { exact: true })).toHaveValue(annaName);
 
   await card.getByLabel("Email (facoltativa)").fill(` Anna@${mailbox}.Prova.test `);
   await card.getByLabel("Telefono (facoltativo)").fill("+39 (02) 1234-5678");
@@ -92,32 +99,30 @@ test("consulente: aggiunge referenti; il primo è principale; email e telefono c
     .eq("customer_id", customerId);
   expect(data).toHaveLength(1);
 
-  const anna = contactRow(page, "Anna Inventata");
+  const anna = contactRow(page, annaName);
   await expect(anna).toContainText("Principale");
   await expect(anna).toContainText(`anna@${mailbox}.prova.test`);
   await expect(anna).toContainText("+39 (02) 1234-5678");
 
-  await card.getByLabel("Nome", { exact: true }).fill("Bruno Inventato");
+  await card.getByLabel("Nome", { exact: true }).fill(brunoName);
   await card.getByRole("button", { name: "Aggiungi referente" }).click();
-  await expect(contactRow(page, "Bruno Inventato")).toBeVisible();
-  await expect(contactRow(page, "Bruno Inventato")).not.toContainText("Principale");
+  await expect(contactRow(page, brunoName)).toBeVisible();
+  await expect(contactRow(page, brunoName)).not.toContainText("Principale");
 
   // La consulente sceglie il principale ma non disattiva.
-  await contactRow(page, "Bruno Inventato")
-    .getByRole("button", { name: "Rendi principale" })
-    .click();
+  await contactRow(page, brunoName).getByRole("button", { name: "Rendi principale" }).click();
   await expect(status(card, "Referente principale aggiornato.")).toBeVisible();
-  await expect(contactRow(page, "Bruno Inventato")).toContainText("Principale");
-  await expect(contactRow(page, "Anna Inventata")).not.toContainText("Principale");
+  await expect(contactRow(page, brunoName)).toContainText("Principale");
+  await expect(contactRow(page, annaName)).not.toContainText("Principale");
   await expect(card.getByRole("button", { name: "Disattiva" })).toHaveCount(0);
 });
 
 test("modifica di un referente: i campi mostrano i dati salvati, anche dopo aver ricaricato", async ({
   page,
 }) => {
-  await signIn(page, users.consultant!);
+  await openSession(page, users.consultant!);
   await openReady(page, customerUrl);
-  const row = contactRow(page, "Anna Inventata");
+  const row = contactRow(page, annaName);
   await row.getByRole("button", { name: "Modifica" }).click();
   await row.getByLabel("Email (facoltativa)").fill(`  ANNA.NUOVA@${mailbox}.PROVA.TEST `);
   await row.getByLabel("Ruolo (facoltativo)").fill("  Amministrazione   ");
@@ -131,7 +136,7 @@ test("modifica di un referente: i campi mostrano i dati salvati, anche dopo aver
 
   await page.reload();
   await page.waitForLoadState("networkidle");
-  const again = contactRow(page, "Anna Inventata");
+  const again = contactRow(page, annaName);
   await expect(again).toContainText(`anna.nuova@${mailbox}.prova.test`);
   await again.getByRole("button", { name: "Modifica" }).click();
   await expect(again.getByLabel("Ruolo (facoltativo)")).toHaveValue("Amministrazione");
@@ -140,13 +145,13 @@ test("modifica di un referente: i campi mostrano i dati salvati, anche dopo aver
 test("indirizzi: via, comune e paese obbligatori; paese con un clic; predefinito", async ({
   page,
 }) => {
-  await signIn(page, users.consultant!);
+  await openSession(page, users.consultant!);
   await openReady(page, customerUrl);
   const card = addresses(page);
   await card.getByRole("button", { name: "Aggiungi un indirizzo di consegna" }).click();
   // Nessun paese precompilato.
   await expect(card.getByLabel("Paese (codice a due lettere)")).toHaveValue("");
-  await card.getByLabel("Via e numero civico").fill("Via Inventata 1");
+  await card.getByLabel("Via e numero civico").fill(street);
   await card.getByLabel("Comune").fill("Comune di Prova");
   await card.getByLabel("CAP").fill("123");
   // Il paese è obbligatorio anche nel browser: si toglie il controllo per provare il server.
@@ -166,16 +171,16 @@ test("indirizzi: via, comune e paese obbligatori; paese con un clic; predefinito
   await card.getByLabel("Descrizione (facoltativa, per esempio «Magazzino»)").fill("Magazzino");
   await card.getByRole("button", { name: "Aggiungi indirizzo" }).dblclick();
   await expect(status(card, "Indirizzo aggiunto.")).toBeVisible();
-  const first = addressRow(page, "Via Inventata 1");
+  const first = addressRow(page, street);
   await expect(first).toContainText("Predefinito");
-  await expect(first).toContainText("Via Inventata 1, 00100 Comune di Prova (RM), Italia");
+  await expect(first).toContainText(`${street}, 00100 Comune di Prova (RM), Italia`);
 
-  await card.getByLabel("Via e numero civico").fill("Rue Inventée 4");
+  await card.getByLabel("Via e numero civico").fill(foreignStreet);
   await card.getByLabel("Comune").fill("Ville de Test");
   await card.getByLabel("CAP").fill("F-75001");
   await card.getByLabel("Paese (codice a due lettere)").fill("fr");
   await card.getByRole("button", { name: "Aggiungi indirizzo" }).click();
-  const second = addressRow(page, "Rue Inventée 4");
+  const second = addressRow(page, foreignStreet);
   await expect(second).toContainText("Francia");
   await second.getByRole("button", { name: "Rendi predefinito" }).click();
   await expect(status(card, "Indirizzo predefinito aggiornato.")).toBeVisible();
@@ -190,7 +195,7 @@ test("indirizzi: via, comune e paese obbligatori; paese con un clic; predefinito
   await expect(first.getByLabel("Provincia")).toHaveValue("MI");
   await page.reload();
   await page.waitForLoadState("networkidle");
-  await expect(addressRow(page, "Via Inventata 1")).toContainText("20100 Comune di Prova (MI)");
+  await expect(addressRow(page, street)).toContainText("20100 Comune di Prova (MI)");
   const { data } = await admin()
     .from("customer_delivery_addresses")
     .select("id")
@@ -201,22 +206,22 @@ test("indirizzi: via, comune e paese obbligatori; paese con un clic; predefinito
 test("responsabile commerciale: disattiva e riattiva, il principale solo dopo averne scelto un altro", async ({
   page,
 }) => {
-  await signIn(page, users.manager!);
+  await openSession(page, users.manager!);
   await openReady(page, customerUrl);
   const card = contacts(page);
-  await contactRow(page, "Bruno Inventato").getByRole("button", { name: "Disattiva" }).click();
+  await contactRow(page, brunoName).getByRole("button", { name: "Disattiva" }).click();
   await expect(card.getByText("Scegli prima un altro referente principale.")).toBeVisible();
 
-  await contactRow(page, "Anna Inventata").getByRole("button", { name: "Disattiva" }).click();
+  await contactRow(page, annaName).getByRole("button", { name: "Disattiva" }).click();
   await expect(status(card, "Referente disattivato.")).toBeVisible();
   await card.getByText("Disattivati (1)").click();
-  const anna = contactRow(page, "Anna Inventata");
+  const anna = contactRow(page, annaName);
   await expect(anna).toContainText("Disattivato");
   await anna.getByRole("button", { name: "Riattiva" }).click();
   await expect(status(card, "Referente riattivato.")).toBeVisible();
   await expect(card.getByText("Disattivati (1)")).toHaveCount(0);
 
-  const old = addressRow(page, "Via Inventata 1");
+  const old = addressRow(page, street);
   await old.getByRole("button", { name: "Disattiva" }).click();
   await expect(status(addresses(page), "Indirizzo disattivato.")).toBeVisible();
   await expect(addresses(page).getByText("Disattivati (1)")).toBeVisible();
@@ -225,7 +230,7 @@ test("responsabile commerciale: disattiva e riattiva, il principale solo dopo av
 test("elenco: ricerca per parte dell'email, solo referenti attivi, senza mostrarne i dati", async ({
   page,
 }) => {
-  await signIn(page, users.owner!);
+  await openSession(page, users.owner!);
   await openReady(page, "/clienti");
   const search = page.getByRole("searchbox", { name: /^Cerca per nome/ });
   const table = page.getByTestId("customers-table");
@@ -241,7 +246,7 @@ test("elenco: ricerca per parte dell'email, solo referenti attivi, senza mostrar
     .from("customer_contacts")
     .update({ is_active: false, is_primary: false })
     .eq("customer_id", customerId)
-    .eq("name", "Anna Inventata");
+    .eq("name", annaName);
   expect(error).toBeNull();
   await page.getByRole("button", { name: "Cerca" }).click();
   await expect(page.getByText("Nessun cliente trovato con questa ricerca.")).toBeVisible();
@@ -263,9 +268,9 @@ test("registro e storico: referenti e indirizzi senza nomi, email, telefoni o vi
     .or(`new_data->>customer_id.eq.${customerId},old_data->>customer_id.eq.${customerId}`);
   expect(error).toBeNull();
   expect(data!.length).toBeGreaterThan(5);
-  expect(JSON.stringify(data)).not.toMatch(/anna|bruno|@|\(02\)|Inventata 1|Inventée|Magazzino/i);
+  expect(JSON.stringify(data)).not.toMatch(/anna|bruno|@|\(02\)|Via Inventata|Inventée|Magazzino/i);
 
-  await signIn(page, users.owner!);
+  await openSession(page, users.owner!);
   await openReady(page, customerUrl);
   const history = page.locator("section").filter({ hasText: "Storico delle modifiche" });
   // Lo storico mostra le ultime 10 modifiche: le più recenti sono di questi passi.
@@ -274,7 +279,7 @@ test("registro e storico: referenti e indirizzi senza nomi, email, telefoni o vi
     `ha disattivato un indirizzo di consegna del cliente «${customerName}»`,
   );
   // Gli autori possono comparire con la loro email: si controllano solo i dati del cliente.
-  expect(await history.innerText()).not.toMatch(/anna|bruno|\(02\)|Inventata 1|Magazzino/i);
+  expect(await history.innerText()).not.toMatch(/anna|bruno|\(02\)|Via Inventata|Magazzino/i);
 });
 
 test("più di 50 risultati: i primi 50 per nome e l'invito ad affinare la ricerca", async ({
@@ -286,7 +291,7 @@ test("più di 50 risultati: i primi 50 per nome e l'invito ad affinare la ricerc
   const { error } = await admin().from("customers").insert(batch);
   expect(error).toBeNull();
 
-  await signIn(page, users.owner!);
+  await openSession(page, users.owner!);
   await openReady(page, `/clienti?cerca=${encodeURIComponent(`${mine} Lotto`)}`);
   await expect(page.getByTestId("customer-row")).toHaveCount(50);
   await expect(page.getByTestId("customer-row").first()).toContainText(`${mine} Lotto 01`);
@@ -301,7 +306,7 @@ test("più di 50 risultati: i primi 50 per nome e l'invito ad affinare la ricerc
 
 test("oltre il limite delle ricerche nell'elenco: messaggio gentile", async ({ page }) => {
   test.setTimeout(90_000);
-  await signIn(page, users.busy!);
+  await openSession(page, users.busy!);
   for (let search = 1; search <= 20; search++) {
     await page.goto(`/clienti?cerca=${encodeURIComponent(`${mine} ricerca ${search}`)}`);
   }

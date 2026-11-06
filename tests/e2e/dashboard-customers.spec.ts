@@ -7,32 +7,31 @@ import { deleteTestCustomers, runPrefix } from "./support/test-data";
 import {
   admin,
   canUseTemporaryUsers,
-  createTemporaryUser,
   deleteTemporaryUser,
-  signIn,
-  type TemporaryUser,
+  openSession,
+  roleUser,
+  type TestUser,
 } from "./support/temporary-users";
 
 // Riquadro «Clienti da completare» e pagina relativa, con dati inventati cancellati alla fine.
 // Gira da solo, dopo il percorso guidato (progetto «riquadro-clienti»): il numero atteso si
 // ricalcola dal database con la stessa regola, perché nel database di prova possono esserci
 // anche clienti veri (il «CLIENTE PROVA» del titolare, che non si tocca).
-test.skip(!canUseTemporaryUsers, "servono le variabili del database di prova in .env.local");
+test.skip(!canUseTemporaryUsers, "servono le variabili del Supabase locale (npm run test:e2e)");
 test.describe.configure({ mode: "serial" });
 
 const mine = runPrefix(randomUUID().slice(0, 8));
-const users: Partial<
-  Record<"owner" | "consultant" | "manager" | "finance" | "catalog", TemporaryUser>
-> = {};
+const users: Partial<Record<"owner" | "consultant" | "manager" | "finance" | "catalog", TestUser>> =
+  {};
 const secretTaxCode = "RSSMRA85T10A562S";
 
 test.beforeAll(async () => {
   test.setTimeout(120_000);
-  users.owner = await createTemporaryUser("owner");
-  users.consultant = await createTemporaryUser("sales_consultant");
-  users.manager = await createTemporaryUser("sales_manager");
-  users.finance = await createTemporaryUser("finance_admin");
-  users.catalog = await createTemporaryUser("catalog_admin");
+  users.owner = roleUser("owner");
+  users.consultant = roleUser("sales_consultant");
+  users.manager = roleUser("sales_manager");
+  users.finance = roleUser("finance_admin");
+  users.catalog = roleUser("catalog_admin");
   // Sette incompleti (con un codice fiscale, che non deve mai comparire), uno completo e uno
   // incompleto ma disattivato.
   const rows = [
@@ -97,7 +96,7 @@ test("titolare: conteggio, primi 5 nomi con il collegamento e «e altri N», nes
   const { total, names } = await expected();
   expect(total).toBeGreaterThanOrEqual(7);
 
-  await signIn(page, users.owner!);
+  await openSession(page, users.owner!);
   await dashboard(page);
   await expect(page.getByRole("heading", { name: "Clienti da completare" })).toBeVisible();
   await expect(page.getByTestId("incomplete-headline")).toHaveText(
@@ -123,7 +122,7 @@ test("anche responsabile, consulente e amministrazione economica vedono il riqua
   const { total } = await expected();
   for (const user of [users.manager!, users.consultant!, users.finance!]) {
     await page.context().clearCookies();
-    await signIn(page, user);
+    await openSession(page, user);
     await dashboard(page);
     await expect(page.getByTestId("incomplete-headline"), user.role).toHaveText(
       `${total} clienti attivi da completare per la fatturazione.`,
@@ -136,7 +135,7 @@ test("anche responsabile, consulente e amministrazione economica vedono il riqua
 });
 
 test("l'amministrazione cataloghi non vede il riquadro né la pagina", async ({ page }) => {
-  await signIn(page, users.catalog!);
+  await openSession(page, users.catalog!);
   await dashboard(page);
   await expect(card(page)).toHaveCount(0);
   await expect(page.getByRole("heading", { name: "Clienti da completare" })).toHaveCount(0);
@@ -145,7 +144,7 @@ test("l'amministrazione cataloghi non vede il riquadro né la pagina", async ({ 
 });
 
 test("pagina «Clienti da completare»: solo attivi incompleti, dal menu", async ({ page }) => {
-  await signIn(page, users.consultant!);
+  await openSession(page, users.consultant!);
   await dashboard(page);
   const menu = page.getByRole("navigation", { name: "Menu principale" });
   await menu.getByRole("button", { name: "Clienti", exact: true }).click();
@@ -167,7 +166,7 @@ test("disattivato un cliente da completare, il riquadro si aggiorna", async ({ p
     .update({ is_active: false })
     .eq("name", `${mine} Da completare 1`);
   expect(error).toBeNull();
-  await signIn(page, users.owner!);
+  await openSession(page, users.owner!);
   await dashboard(page);
   await expect(page.getByTestId("incomplete-headline")).toHaveText(
     `${before.total - 1} clienti attivi da completare per la fatturazione.`,

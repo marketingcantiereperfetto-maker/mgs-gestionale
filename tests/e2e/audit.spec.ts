@@ -6,16 +6,17 @@ import { romeDay } from "../../src/lib/rome-day";
 import { deleteTestBrands, deleteTestCompanies, runPrefix } from "./support/test-data";
 import {
   canUseTemporaryUsers,
+  accessToken,
   createTemporaryUser,
   deleteTemporaryUser,
-  signIn,
-  type TemporaryUser,
+  openSession,
+  type TestUser,
 } from "./support/temporary-users";
 
 // Nome del profilo e registro delle modifiche, con dati inventati cancellati alla fine (solo
 // sul progetto di prova). Le righe del registro restano, come sempre. Senza .env.local
 // vengono saltati.
-test.skip(!canUseTemporaryUsers, "servono le variabili del database di prova in .env.local");
+test.skip(!canUseTemporaryUsers, "servono le variabili del Supabase locale (npm run test:e2e)");
 test.describe.configure({ mode: "serial" });
 
 const mine = runPrefix(randomUUID().slice(0, 8));
@@ -27,13 +28,14 @@ const png = Buffer.from(
   "base64",
 );
 
-let owner: TemporaryUser;
-let consultant: TemporaryUser;
+let owner: TestUser;
+let consultant: TestUser;
 let companyUrl = "";
 let brandUrl = "";
 
 test.beforeAll(async () => {
   test.setTimeout(120_000);
+  // Titolare e consulente dedicati: le prove cambiano il nome del loro profilo.
   owner = await createTemporaryUser("owner");
   consultant = await createTemporaryUser("sales_consultant");
 });
@@ -55,7 +57,7 @@ const status = (page: Page, text: string) => page.getByRole("status").filter({ h
 const rows = (page: Page) => page.getByTestId("audit-row");
 
 test("il proprio nome: si salva, compare subito nel campo e nell'avatar", async ({ page }) => {
-  await signIn(page, owner);
+  await openSession(page, owner);
   await page.getByRole("button", { name: /Menu utente/ }).click();
   await page.getByRole("link", { name: "Il mio profilo" }).click();
   await page.waitForLoadState("networkidle");
@@ -76,7 +78,7 @@ test("il proprio nome: si salva, compare subito nel campo e nell'avatar", async 
 });
 
 test("il registro mostra chi e cosa in italiano, senza dati tecnici", async ({ page }) => {
-  await signIn(page, owner);
+  await openSession(page, owner);
   await openReady(page, "/impostazioni/societa-e-brand/societa/nuova");
   await page.getByLabel("Ragione sociale").fill(companyName);
   await page.getByRole("button", { name: "Crea società" }).click();
@@ -130,7 +132,7 @@ test("il registro mostra chi e cosa in italiano, senza dati tecnici", async ({ p
 });
 
 test("filtri per tipo di dato, persona e giornate in ora di Roma", async ({ page }) => {
-  await signIn(page, owner);
+  await openSession(page, owner);
   const today = romeDay(new Date());
   const tomorrow = new Date(Date.now() + 36 * 3_600_000);
 
@@ -160,9 +162,11 @@ test("50 righe per pagina, poi «Modifiche precedenti» senza ripetizioni", asyn
   const client = createClient<Database>(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
     process.env.NEXT_PUBLIC_SUPABASE_PUBLISHABLE_KEY!,
-    { auth: { persistSession: false } },
+    {
+      auth: { persistSession: false },
+      global: { headers: { Authorization: `Bearer ${accessToken(owner)}` } },
+    },
   );
-  await client.auth.signInWithPassword({ email: owner.email, password: owner.password });
   const brandId = brandUrl.split("/").at(-1)!;
   for (let index = 1; index <= 55; index++) {
     const { error } = await client
@@ -172,9 +176,8 @@ test("50 righe per pagina, poi «Modifiche precedenti» senza ripetizioni", asyn
     expect(error).toBeNull();
   }
   await client.from("brands").update({ name: brandName }).eq("id", brandId);
-  await client.auth.signOut();
 
-  await signIn(page, owner);
+  await openSession(page, owner);
   await openReady(page, `${auditPath}?tipo=brand&persona=${owner.id}`);
   await expect(rows(page)).toHaveCount(50);
   const firstPage = await rows(page).allInnerTexts();
@@ -196,7 +199,7 @@ test("50 righe per pagina, poi «Modifiche precedenti» senza ripetizioni", asyn
 });
 
 test("lo storico nella scheda della società porta al registro filtrato", async ({ page }) => {
-  await signIn(page, owner);
+  await openSession(page, owner);
   await openReady(page, companyUrl);
   const history = page.locator("section").filter({ hasText: "Storico delle modifiche" });
   await expect(history).toContainText(`ha creato la società «${companyName}»`);
@@ -215,7 +218,7 @@ test("lo storico nella scheda della società porta al registro filtrato", async 
 });
 
 test("il consulente non apre il registro ma cambia il proprio nome", async ({ page }) => {
-  await signIn(page, consultant);
+  await openSession(page, consultant);
   await page.goto(auditPath);
   await expect(page).toHaveURL("/?accesso=negato");
 
