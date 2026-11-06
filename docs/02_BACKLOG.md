@@ -20,15 +20,18 @@ Ogni lavoro ha un criterio per dire «è fatto». Si lavora dall'alto verso il b
 
 5b. **Anonimizzazione dei dati personali dei privati su richiesta** (più avanti, da definire con il commercialista): procedura per il titolare che rende anonimi i dati personali di un cliente privato mantenendo intatti i documenti già emessi.
 
-## Fase 1b: archivi
-7. Fornitori, categorie, materiali (a misura e a pezzo), lavorazioni con opzioni e basi di calcolo.
-8. Regole di ricarico (base, categoria, fornitore, eccezione articolo) con anteprima.
-9. Importazione da Excel con anteprima, errori chiari, nessun duplicato al secondo caricamento.
+## Fase 2: catalogo, prezzi e Wizard (architettura v6, piano in `06_PIANO_CATALOGO.md`)
+*Sostituisce dal 6 novembre 2026 le vecchie voci 7-11 (archivi, ricarico, importazione, motore dei prezzi, Wizard), riscritte secondo la v6.*
+- **K0 Permessi per utente** *(in corso, ramo `fase2/k0-permessi`)*: tabella dei permessi con i preset dei cinque ruoli, spunte per utente, permessi sensibili concessi solo dal titolare, `can()` e regole del database sulle facoltà effettive. *Fatto quando:* ogni ruolo con i soli preset si comporta come prima, e un permesso aggiunto o tolto cambia davvero cosa l'utente può fare, anche chiamando il database direttamente.
+- **K1 Archivi semplici e fornitori**, con il campo Categoria cliente sul cliente.
+- **K2 Motore dei prezzi, parte 1** (modulo puro): importi, scaglioni a fette progressive, ricarico e regole con precedenza, arrotondamenti.
+- **K3 Motore dei prezzi, parte 2**: Multiformato e Tabella, con i **casi reali come test**; revisione del titolare alla fine.
+- **K4 Materiali** · **K5 Lavorazioni e servizi** · **K6 Esclusioni** · **K7 Categorie e prodotti** · **K8 Wizard Multiformato** · **K9 Wizard a Tabella e kit** · **K10 Listini** · **K11 Verifica del catalogo**.
+- **Importazione da Excel** con anteprima, errori chiari e nessun duplicato al secondo caricamento (§18): da pianificare dentro o dopo K4.
+- **Testi da allineare alla v6** (piccolo): la scheda cliente dice ancora che arriverà la «consulente assegnata» e la pagina «Clienti → Consulenti» parla di assegnazioni dei clienti; con la v6 il cliente non ha consulente assegnata (§16.5). Da correggere con K1 o prima.
 
-## Fase 2: prezzi, Wizard e preventivo
-10. Motore dei prezzi (modulo puro) con i **casi reali come test**.
-11. Wizard: blocchi, gradi di libertà, regole, simulatore, bozza/prova/pubblicato, versioni.
-12. Preventivo: testata, righe, omaggi e upsell, totale e ripartizione, soglie e autorizzazioni, stati, PDF.
+## Fase 3: preventivo (dopo il catalogo, da pianificare a parte)
+12. Preventivo: pop-up del catalogo, Wizard compilabile dalle consulenti, righe di testo, descrizione e prezzo modificabili con soglie e autorizzazioni, listino per riga, foto con spunta, origine obbligatoria, omaggi e upsell, totale e ripartizione, stati, Duplica preventivo, PDF, passaggio a Vinto e ordine. Poi le statistiche sugli acquisti dei clienti.
 13. Pilota con 2-3 consulenti in parallelo al sistema attuale. *Prima di iniziare:* passaggio ai piani a pagamento di Vercel e Supabase, creazione del progetto Supabase di produzione, **servizio email SMTP aziendale** collegato a Supabase e **modelli delle email in italiano** (invito, recupero password) con il link a `/auth/conferma`.
 
 ## Fasi successive (solo titoli)

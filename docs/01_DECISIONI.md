@@ -2,14 +2,14 @@
 
 Aggiornare a ogni traguardo. Una decisione cambiata non si cancella: si aggiunge la nuova con la data e il motivo.
 
-## Prodotto (dal documento di architettura v5)
-- Un solo Wizard per ogni articolo del catalogo, composto da materiali e lavorazioni. Non esistono «prodotti» come archivio separato.
-- Gli Standard sono Wizard con blocchi bloccati; i kit sono Wizard con componenti (anche misti, un solo livello nella 1.0).
+## Prodotto (dal documento di architettura v5; in parte sostituite dalla v6, vedi «Decise il 6 novembre 2026»)
+- Un solo Wizard per ogni articolo del catalogo, composto da materiali e lavorazioni. Non esistono «prodotti» come archivio separato. *(Sostituita dalla v6, 6 novembre 2026: Categoria → Prodotto → Wizard, uno a uno.)*
+- Gli Standard sono Wizard con blocchi bloccati; i kit sono Wizard con componenti (anche misti, un solo livello nella 1.0). *(Sostituita dalla v6, 6 novembre 2026: due motori, Multiformato e Tabella; i kit sono Tabelle con blocchi bloccati.)*
 - Le varianti sono lavorazioni a scelta; a prezzo 0 se non incidono, sempre registrate.
-- Ogni materiale, qualunque unità: prezzo da ricarico o prezzo scritto, fisso o a scaglioni. Scaglioni sul totale della voce nella riga.
+- Ogni materiale, qualunque unità: prezzo da ricarico o prezzo scritto, fisso o a scaglioni. Scaglioni sul totale della voce nella riga. *(Sostituita dalla v6, 6 novembre 2026: gli scaglioni sono a fette progressive, contati sul totale della voce nella riga.)*
 - Regole di ricarico per tutti, categoria o fornitore. Prevale la più specifica; il fornitore prevale sulla categoria.
-- Quantità intermedie: prezzo dello scaglione inferiore diviso i suoi pezzi, per i pezzi richiesti. Avviso di disallineamento in compilazione.
-- Offerte senza date: attive o non attive.
+- Quantità intermedie: prezzo dello scaglione inferiore diviso i suoi pezzi, per i pezzi richiesti. Avviso di disallineamento in compilazione. *(Sostituita dalla v6, 6 novembre 2026: nelle tabelle libere la quantità libera usa il cadauno dello scaglione precedente; l'avviso di disallineamento resta da finalizzare, §28.2.)*
+- Offerte senza date: attive o non attive. *(Sostituita dalla v6, 6 novembre 2026: l'interruttore «offerta attiva» non esiste più; il Wizard calcola sempre il prezzo in offerta e il listino barrato è l'offerta più una percentuale.)*
 - Soglia di sicurezza calcolata dal costo con coefficiente. Sotto soglia: avviso e richiesta di autorizzazione.
 - Prezzo modificabile per riga e come prezzo totale ripartito sulle righe.
 - Preventivo Vinto diventa Ordine. Costi sempre definitivi. Incasso automatico dalle condizioni di pagamento (rate).
@@ -24,7 +24,7 @@ Aggiornare a ogni traguardo. Una decisione cambiata non si cancella: si aggiunge
 
 ## Decise il 2 novembre 2026 (risposte del titolare all'avvio)
 - **Node 26** (LTS attiva dal 28 ottobre 2026, predefinita su Vercel). Sostituisce la 24 indicata in `.nvmrc` all'avvio.
-- **Ruoli:** 5 modelli forniti dal software (titolare, consulente, responsabile commerciale, amministrazione cataloghi, amministrazione economica). Facoltà personalizzate sul singolo utente in una fase successiva. Ogni utente è collegato a una o più società già dal primo rilascio dell'accesso.
+- **Ruoli:** 5 modelli forniti dal software (titolare, consulente, responsabile commerciale, amministrazione cataloghi, amministrazione economica). Facoltà personalizzate sul singolo utente in una fase successiva. *(Sostituita dalla v6, 6 novembre 2026: permessi predefiniti per ruolo più spunte sull'utente, §20.2, nella richiesta K0.)* Ogni utente è collegato a una o più società già dal primo rilascio dell'accesso.
 - **Primo accesso:** solo su invito, nessuna registrazione libera. Il primo titolare si crea con un comando, dopo conferma, e imposta la password dal link ricevuto per email.
 - **Costi dei servizi:** piani gratuiti di Vercel e Supabase per la prova. **Prima del pilota si passa ai piani a pagamento** (il piano Hobby di Vercel non ammette uso commerciale; Supabase gratuito sospende i progetti inattivi).
 - **Ambienti:** un solo progetto Supabase di prova adesso (usato da `main` e dalle anteprime, solo dati inventati); un progetto di produzione separato prima del pilota.
@@ -53,7 +53,7 @@ Aggiornare a ogni traguardo. Una decisione cambiata non si cancella: si aggiunge
 ## Decise il 3 novembre 2026 (guscio dell'app, giorno 4)
 - **Voci del menu per ruolo — proposta provvisoria, da rivedere quando arrivano i dati:**
   - Tutti: Dashboard, Preventivi, Ordini, Clienti, Statistiche, Manuali (il filtro sui contenuti arriverà con i dati, per esempio il consulente vede solo i propri risultati).
-  - Catalogo: tutti; chi non gestisce il catalogo vede solo «Wizard (articoli)» e «Offerte attive» (catalogo commerciale, §21.1). Categorie, materiali, lavorazioni e regole di ricarico: titolare e amministrazione cataloghi.
+  - Catalogo: tutti; chi non gestisce il catalogo vede solo «Wizard (articoli)» e «Offerte attive» (catalogo commerciale, §21.1). Categorie, materiali, lavorazioni e regole di ricarico: titolare e amministrazione cataloghi. *(Sostituita dalla v6, 6 novembre 2026: tendina Catalogo del §21.1: categorie e prodotti, Wizard, materiali, lavorazioni, servizi, esclusioni, listini, regole di ricarico; la consulente vede il catalogo commerciale.)*
   - Controllo di gestione: titolare e amministrazione economica.
   - Impostazioni: solo il titolare.
   - «Richieste di autorizzazione» e «Consulenti»: titolare e responsabile commerciale.
@@ -95,7 +95,7 @@ Aggiornare a ogni traguardo. Una decisione cambiata non si cancella: si aggiunge
 
 ## Decise il 4 novembre 2026 (clienti, backlog 5, cap. 16)
 - **Chi vede e chi modifica i clienti:** vedono e creano titolare, responsabile commerciale, consulente e amministrazione economica; modificano i dati gli stessi ruoli; disattivano e riattivano solo titolare e responsabile commerciale; il campo «società del gruppo» lo cambiano solo titolare e amministrazione economica. **L'amministrazione cataloghi non ha nessun accesso ai clienti**, nemmeno in lettura. Controllo sul server con `can()` e regole nel database.
-- **Le consulenti vedono tutti i clienti**, non solo i propri. Motivo: la futura consulente assegnata (§16.5) serve per attribuzione e statistiche, non per limitare la visibilità. Limiti mantenuti: l'elenco mostra solo nome, tipo, comune e completezza; codice fiscale, email e telefono si vedono solo nella scheda del singolo cliente; nessuna esportazione di massa per le consulenti (solo il titolare, quando arriverà); ogni modifica finisce nel registro con l'autore.
+- **Le consulenti vedono tutti i clienti**, non solo i propri. Motivo: la futura consulente assegnata (§16.5) serve per attribuzione e statistiche, non per limitare la visibilità. *(Sostituita dalla v6, 6 novembre 2026: il cliente non ha una consulente assegnata, §16.5; la regola «tutte le consulenti vedono tutti i clienti» resta.)* Limiti mantenuti: l'elenco mostra solo nome, tipo, comune e completezza; codice fiscale, email e telefono si vedono solo nella scheda del singolo cliente; nessuna esportazione di massa per le consulenti (solo il titolare, quando arriverà); ogni modifica finisce nel registro con l'autore.
 - **Scheda del cliente per le consulenti (precisazione del 4 novembre 2026):** le consulenti vedono e modificano tutti i dati del cliente nella scheda (partita IVA, codice fiscale, indirizzo, PEC…). Motivo: i clienti li comunicano alle consulenti, che devono poter controllare se un collega li ha inseriti bene. Il limite sui dati personali riguarda il registro (che le consulenti non leggono), non la scheda.
 - **Ricerca nell'elenco clienti** per nome, partita IVA, codice fiscale e PEC; i risultati mostrano comunque solo nome, tipo, comune e completezza. L'email dei clienti non esiste come campo dell'anagrafica (§16.2: l'email è dei referenti): entrerà nella ricerca con i referenti.
 - **Autore nella scheda:** «Creato da … il … · Ultima modifica di … il …», per chi ha accesso ai clienti. Chi e quando sono colonne del cliente scritte dal database (non dal registro); il nome viene da una funzione protetta che restituisce solo nome o email degli autori dei clienti, nient'altro dei profili.
@@ -105,7 +105,7 @@ Aggiornare a ogni traguardo. Una decisione cambiata non si cancella: si aggiunge
 - **Doppioni di partita IVA o codice fiscale:** avviso con conferma esplicita («È un cliente diverso»); blocco se coincidono anche il codice ufficio PA. Nessuna fusione automatica. Clienti simili per nome con `pg_trgm` (schema `extensions`), solo per chi vede i clienti, al massimo 5 risultati con solo nome e comune.
 - **Dati personali nel registro:** per i clienti compaiono con il valore solo nome e tipo; per tutti gli altri campi solo il nome del campo cambiato («ha cambiato il codice fiscale»), mai il valore.
 - **Nessun dato personale nel registro, alla scrittura (correzione del titolare, 4 novembre 2026):** nascondere i valori nella pagina non basta, perché la tabella del registro è immutabile e leggibile anche dall'amministrazione economica: i dati resterebbero per sempre e l'anonimizzazione futura dei privati sarebbe impossibile. Per i clienti il registro salva solo id, nome, tipo di soggetto, stato attivo e l'elenco dei nomi dei campi cambiati (alla creazione e alla cancellazione: dei campi compilati). Vale anche per referenti e indirizzi di consegna. Le righe già scritte prima della correzione riguardano solo clienti di prova con dati inventati.
-- **Arriveranno, senza campi finti:** codice cliente (con la numerazione), condizione di pagamento predefinita e banca/IBAN del cliente (con i pagamenti), consulente assegnata e rapporto per società (§16.1, §16.5).
+- **Arriveranno, senza campi finti:** codice cliente (con la numerazione), condizione di pagamento predefinita e banca/IBAN del cliente (con i pagamenti), consulente assegnata e rapporto per società (§16.1, §16.5). *(Sostituita dalla v6, 6 novembre 2026: nessuna consulente assegnata al cliente; resta da fare il rapporto per società, §16.1, e arriva il campo Categoria cliente, §16.7.)*
 - **Richieste di unione:** A1 anagrafica (tabella, permessi, controlli, indicatore, elenco, scheda); A2 maschera «Aggiungi cliente» riutilizzabile, accessibile (focus bloccato nella finestra, Esc chiude, il focus torna al pulsante), clienti simili e doppioni; B referenti e indirizzi di consegna; C clienti da completare in dashboard e nel percorso guidato.
 
 ## Decise il 4 novembre 2026 (clienti A2: maschera «Aggiungi cliente» e doppioni)
@@ -140,12 +140,35 @@ Aggiornare a ogni traguardo. Una decisione cambiata non si cancella: si aggiunge
 - **Pagina «Clienti da completare»:** solo clienti attivi incompleti, voce di menu e pagina per chi vede i clienti; l'amministrazione cataloghi torna alla dashboard con l'avviso.
 - **Prove:** il caso «Da fare» del passo clienti è coperto solo dai test di unità, perché il database di prova contiene il cliente attivo del titolare, che non si tocca; nel browser si verifica «Fatto». Il riquadro gira in un gruppo di prove a sé, dopo il percorso guidato, e ricalcola dal database il numero atteso.
 
+## Decise il 6 novembre 2026 (documento di architettura v6)
+La versione 6 sostituisce la 5 (`docs/ARCHITETTURA_v6.docx`). Ridefinisce il catalogo dopo il confronto con i listini, le offerte e le tabelle in uso: sono riscritti i capitoli 6, 7, 8, 10 e 11. Clienti, ordini, pagamenti e controllo di gestione restano come nella v5. Dove le decisioni precedenti contraddicono la v6, vale la v6: sono segnate «Sostituita dalla v6». Il piano di lavoro è in `docs/06_PIANO_CATALOGO.md` (richieste K0-K11).
+- **Struttura del catalogo:** Categoria → Prodotto → Wizard, uno a uno. Il Prodotto è la sottocategoria commerciale con la sua foto; il Wizard serve solo a calcolare il prezzo, lo imposta l'amministratore e le consulenti non lo modificano.
+- **Due motori di calcolo:** Multiformato (calcolato da materiali e lavorazioni) e Tabella (libera o automatica, prezzi scritti o calcolati dal costo, con variabile facoltativa).
+- **Blocchi:** un blocco è 1 materiale con le sue lavorazioni, formati e pezzi; più blocchi per Wizard. Il Multiformato accetta blocchi a misura (mq, metri) e a pezzo: il kit a scelta della consulente si costruisce così. I kit pronti sono Tabelle con blocchi bloccati, a un solo livello nella 1.0.
+- **Lavorazioni e servizi:** cinque tipi (combo, check, input, data, descrittivo) con unità di calcolo per ogni voce; prezzo da ricarico o scritto come i materiali. Archivio dei servizi (spedizione, grafica, allestimento, sopralluogo…) con unità, tipologie, prezzi fissi o a scaglioni e spunta omaggio senza autorizzazione; i servizi stanno fuori dai blocchi e si sommano al prezzo della riga.
+- **Esclusioni:** anagrafica unica con voci, famiglie, categorie e caratteristiche, valida nei due sensi, con una vista nelle schede.
+- **Avviamento e minimale:** solo dei Wizard Multiformato e Tabella automatica; non compaiono nella descrizione e sono voci a sé nelle statistiche; un listino può cambiarli o toglierli.
+- **Scaglioni a fette progressive:** ogni fascia si applica alla quota di quantità che vi cade, così il totale cresce sempre; contati sul totale della voce nella riga (quantità sommate tra i blocchi dello stesso materiale).
+- **Prezzo in offerta e listino barrato:** il Wizard calcola sempre il prezzo in offerta; il listino barrato è l'offerta più la percentuale del prodotto o della categoria. L'interruttore «offerta attiva» è eliminato. Il ricarico dà direttamente il prezzo in offerta; non esiste uno sconto di listino.
+- **Listini:** anagrafica dei listini con un nome, scelti dalla consulente per riga (uno solo), con sconti e prezzi fissi, riservabili a clienti; avviso ignorabile e tracciato; prezzo atteso come controllo.
+- **Foto:** su categorie, prodotti, materiali, lavorazioni e servizi; accanto a ogni elemento del Wizard la spunta «Inserire foto», fino a 4 foto per riga.
+- **Righe del preventivo:** anche righe di solo testo, senza prezzi, che passano nell'ordine. Descrizione e prezzo modificabili liberamente, con «Ripristina descrizione automatica».
+- **Duplica ovunque conviene** (catalogo, listini, righe, preventivi), con nome «-copia» e copia non utilizzabile finché non si attiva; un elemento mai usato si elimina, uno usato si disattiva. Il duplicato di un preventivo ha numerazione propria e ricalcola i prezzi attuali, salvo scelta contraria. Non si duplicano clienti, società, brand, conti, utenti e ordini emessi (§19.6).
+- **Scelta dei materiali** con un pop-up del catalogo, ricerca e filtri; materiali ammessi per regole o a mano.
+- **Acquisti dei clienti:** analisi «chi ha comprato cosa e quando», fatturato per cliente e periodo, con grafici.
+- **Permessi e visibilità:** permessi predefiniti per ruolo (fissi) più spunte sull'utente; i permessi sensibili li concede solo il titolare; ogni verifica legge le facoltà dell'utente e non il suo ruolo (§20.2). La consulente vede tutti i preventivi e gli ordini della società e modifica i propri. **Il cliente non ha una consulente assegnata**: la vendita è attribuita alla consulente che ha vinto il preventivo (§16.5).
+- **Origine del preventivo:** anagrafica delle Origini (già cliente, referral, campagna…), obbligatoria per emettere, solo per le statistiche, mai stampata.
+- **Categoria cliente:** nuovo campo dell'anagrafica cliente, da un'anagrafica delle categorie cliente; serve solo alle statistiche e non influisce sui prezzi (§16.7).
+- **Taglie e colori** si scrivono nelle note della riga; le personalizzazioni sono lavorazioni del Wizard (§8.6). Nota: la tabella del §28.3 dice invece «taglie solo nelle note (qui anche righe di quantità)»; da chiarire con il titolare prima dei Wizard.
+- **Menu (§21.1):** Catalogo con categorie e prodotti, Wizard, materiali, lavorazioni, servizi, esclusioni, listini, regole di ricarico; Clienti con elenco, nuovo cliente, clienti da completare, consulenti, categorie cliente; Impostazioni con società e brand, reparti e macchinari, utenti e ruoli, pagamenti, aliquote e unità di misura, origini dei preventivi, importazioni.
+- **Restano da finalizzare (§28.2):** elenco completo dei permessi (si definisce all'inizio di K0), scheda del Wizard campo per campo, modello del PDF, avviso di disallineamento negli scaglioni delle tabelle libere, verifica legale del listino barrato, materiale inserito al volo, annidamento dei kit.
+
 ## Rischi noti
 - **Lettura della tabella clienti da parte delle consulenti (4 novembre 2026):** le consulenti hanno il permesso di leggere la tabella dei clienti nel database (serve alla scheda e all'elenco). Per questo «nessuna esportazione di massa per le consulenti» vale solo nell'interfaccia: chi usasse direttamente il collegamento al database con le proprie credenziali potrebbe leggere tutte le anagrafiche. Mitigazioni future: un limite di righe per ogni richiesta al database e la segnalazione delle letture insolite (per esempio molte schede lette in poco tempo).
 
 ## Aperte (da decidere prima della funzione relativa)
 - Arrotondamenti: prima del motore dei prezzi.
-- Numerazione preventivi e ordini, «Duplica per», taglie come righe o note: prima dei Wizard.
-- Articolo inserito al volo dal preventivo: subito utilizzabile o in bozza.
+- Numerazione preventivi e ordini, «Duplica per», taglie come righe o note: prima dei Wizard. *(Sostituita dalla v6, 6 novembre 2026: Duplica è definita al §19.6; taglie e colori nelle note della riga, §8.6. Resta aperta la numerazione.)*
+- Articolo inserito al volo dal preventivo: subito utilizzabile o in bozza. *(Sostituita dalla v6, 6 novembre 2026: la domanda riguarda ora un materiale inserito al volo, §28.2.)*
 - Stati dell'ordine; valori di aliquote, coefficiente di soglia e quota di spedizione interna: più avanti.
 - Finestra storica e soglia minima di storico per le previsioni.

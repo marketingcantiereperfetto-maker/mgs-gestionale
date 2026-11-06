@@ -6,7 +6,7 @@ Lavora a **piccoli passi verificabili**. Prima di una modifica ampia, proponi un
 Non dichiarare «fatto» finché typecheck, lint e test non passano e il risultato non funziona davvero in anteprima.
 
 ## Fonte di verità
-`docs/ARCHITETTURA_v5.docx` descrive cosa deve fare il gestionale. `docs/01_DECISIONI.md` raccoglie le decisioni.
+`docs/ARCHITETTURA_v6.docx` descrive cosa deve fare il gestionale. `docs/01_DECISIONI.md` raccoglie le decisioni.
 Se la richiesta contraddice i documenti, **fermati e chiedi**: non decidere da solo e non inventare regole di business.
 A ogni traguardo aggiorna `01_DECISIONI.md` e `02_BACKLOG.md`.
 
